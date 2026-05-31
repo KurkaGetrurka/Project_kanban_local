@@ -1,0 +1,20 @@
+KANBAN OFFLINE - INSTRUKCJA
+===========================
+
+To jest gotowa paczka do przeniesienia na drugi komputer.
+Na drugim komputerze NIE trzeba instalowac Node, npm ani zadnych dodatkowych programow.
+
+Jak uruchomic:
+1. Rozpakuj ZIP albo skopiuj caly ten folder na drugi komputer.
+2. Otworz folder z aplikacja.
+3. Kliknij dwa razy: otworz-kanban.bat
+
+Jesli firmowy Windows zablokuje plik .bat:
+- kliknij dwa razy plik index.html
+- aplikacja otworzy sie w domyslnej przegladarce
+
+Wazne:
+- Nie usuwaj folderu assets.
+- Pliki index.html, favicon.svg, icons.svg i folder assets musza zostac razem w jednym folderze.
+- Dane aplikacji zapisuja sie lokalnie w przegladarce danego komputera.
+- Przeniesienie samej aplikacji nie przenosi automatycznie danych zapisanych w przegladarce na poprzednim komputerze.

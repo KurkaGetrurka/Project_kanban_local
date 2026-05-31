@@ -1,0 +1,20 @@
+Jak uruchomic aplikacje offline
+================================
+
+Najprosciej:
+1. Kliknij dwa razy plik: zbuduj-offline.bat
+2. Po udanym buildzie aplikacja otworzy sie sama.
+
+Gotowy folder do przeniesienia na inny komputer:
+- dist-local
+
+Po skopiowaniu folderu dist-local na inny komputer:
+1. Otworz folder dist-local.
+2. Kliknij dwa razy plik: otworz-kanban.bat
+   albo otworz index.html w przegladarce.
+
+Wazne:
+- Do samego uruchamiania folderu dist-local nie potrzeba internetu.
+- Do samego uruchamiania folderu dist-local nie potrzeba Node ani npm.
+- Jezeli budujesz recznie w PowerShell, uzyj: npm.cmd run build
+  Zwykle npm run build moze byc blokowane przez ustawienia Windows.
