@@ -11,6 +11,11 @@ node_modules
 dist
 dist-ssr
 *.local
+*.zip
+backups/
+paczki-offline/*
+!paczki-offline/.gitkeep
+kanban_react_canvas*.jsx
 
 # Editor directories and files
 .vscode/*

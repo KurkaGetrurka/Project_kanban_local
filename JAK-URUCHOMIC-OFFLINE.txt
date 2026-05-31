@@ -5,6 +5,10 @@ Najprosciej:
 1. Kliknij dwa razy plik: zbuduj-offline.bat
 2. Po udanym buildzie aplikacja otworzy sie sama.
 
+Jesli chcesz zrobic paczke ZIP do przeniesienia:
+1. Kliknij dwa razy plik: zrob-paczke-offline.bat
+2. Gotowy ZIP pojawi sie w folderze: paczki-offline
+
 Gotowy folder do przeniesienia na inny komputer:
 - dist-local
 
