@@ -217,7 +217,7 @@ function priorityChipClass(priority, isDark) {
 }
 function PriorityToggleGroup({ value, onChange, isDark, compact = false }) {
   return (
-    <div className={cx("grid w-full grid-cols-2 items-center sm:grid-cols-4", compact ? "gap-1.5" : "gap-2") }>
+    <div className={cx("grid w-full grid-cols-2", compact ? "gap-1.5 sm:grid-cols-2" : "gap-2 sm:grid-cols-4") }>
       {priorityOptions.map((priority) => {
         const isActive = normalizeTaskPriority(value) === priority.id;
         return (
@@ -226,12 +226,13 @@ function PriorityToggleGroup({ value, onChange, isDark, compact = false }) {
             type="button"
             onClick={() => onChange(priority.id)}
             className={cx(
-              "min-w-0 rounded-full px-2 py-1.5 text-center text-[11px] font-black ring-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-300",
+              "min-w-0 rounded-2xl px-2 py-2 text-center text-[11px] font-black leading-tight ring-1 transition hover:-translate-y-0.5",
+              compact ? "min-h-[40px]" : "min-h-[44px]",
               isActive
-                ? priorityChipClass(priority.id, isDark)
+                ? cx(priorityChipClass(priority.id, isDark), "shadow-sm")
                 : isDark
-                  ? "bg-white/5 text-slate-300 ring-white/10"
-                  : "bg-white text-slate-600 ring-slate-200"
+                  ? "bg-white/5 text-slate-300 ring-white/10 hover:bg-white/10 hover:ring-violet-300/35"
+                  : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50 hover:ring-violet-300"
             )}
             aria-pressed={isActive}
             title={`Ustaw priorytet: ${priority.title}`}
@@ -1387,6 +1388,43 @@ function FontScaleStyles() {
       [data-kanban-board] .sm\:text-base { font-size: calc(1rem * var(--kanban-font-scale, 1)) !important; }
       [data-kanban-board] .sm\:text-5xl { font-size: calc(3rem * var(--kanban-font-scale, 1)) !important; }
     }
+
+    [data-kanban-board] .timeline-glass-scroll {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(248, 250, 252, 0.92) rgba(255, 255, 255, 0.12);
+    }
+    [data-kanban-board][data-theme="light"] .timeline-glass-scroll {
+      scrollbar-color: rgba(71, 85, 105, 0.72) rgba(203, 213, 225, 0.42);
+    }
+    [data-kanban-board] .timeline-glass-scroll::-webkit-scrollbar {
+      width: 14px;
+    }
+    [data-kanban-board] .timeline-glass-scroll::-webkit-scrollbar-track {
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.08));
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 8px 16px rgba(15, 23, 42, 0.18);
+    }
+    [data-kanban-board][data-theme="light"] .timeline-glass-scroll::-webkit-scrollbar-track {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(226, 232, 240, 0.72));
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.22), inset 0 8px 16px rgba(148, 163, 184, 0.12);
+    }
+    [data-kanban-board] .timeline-glass-scroll::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      border: 2px solid rgba(15, 23, 42, 0.18);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(203, 213, 225, 0.52)) padding-box;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.42), 0 8px 18px rgba(15, 23, 42, 0.28);
+    }
+    [data-kanban-board][data-theme="light"] .timeline-glass-scroll::-webkit-scrollbar-thumb {
+      border: 2px solid rgba(255, 255, 255, 0.78);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(203, 213, 225, 0.92)) padding-box;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 1), 0 8px 18px rgba(148, 163, 184, 0.28);
+    }
+    [data-kanban-board] .timeline-glass-scroll::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(196, 181, 253, 0.72)) padding-box;
+    }
+    [data-kanban-board][data-theme="light"] .timeline-glass-scroll::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(191, 219, 254, 0.96)) padding-box;
+    }
   `}</style>;
 }
 
@@ -2387,11 +2425,15 @@ function TimelineCard({ t, tasks, month, columns, onOpenTask, onOpenDetails }) {
 
 function TimelineDetailsModal({ t, open, tasks, columns, onClose, onOpenTask, onMoveTaskDate }) {
   const chartRef = useRef(null);
+  const scrollAreaRef = useRef(null);
   const dragMetaRef = useRef({ taskId: null, startX: 0, moved: false, previewDate: null, originalDate: null });
   const clickGuardRef = useRef(false);
   const [draggingTaskId, setDraggingTaskId] = useState(null);
   const [dragPreview, setDragPreview] = useState({ taskId: null, dueDate: null });
   const [timelineView, setTimelineView] = useState("month");
+  const [stickyAxisPosition, setStickyAxisPosition] = useState({ markerY: 0, labelY: 0 });
+  const AXIS_MARKER_OFFSET = 50;
+  const AXIS_LABEL_OFFSET = 68;
 
   const taskDates = tasks.map((task) => parseLocalDate(task.dueDate)).filter(Boolean);
   const hasTasks = taskDates.length > 0;
@@ -2425,7 +2467,34 @@ function TimelineDetailsModal({ t, open, tasks, columns, onClose, onOpenTask, on
   const today = new Date();
   today.setHours(12, 0, 0, 0);
   const showToday = today >= visibleRangeStart && today <= visibleRangeEnd;
-  const timelineHeight = Math.max(360, Math.min(680, 130 + tasks.length * 42));
+  const timelineRowHeight = 52;
+  const timelineHeight = Math.max(360, 150 + tasks.length * timelineRowHeight);
+
+  useEffect(() => {
+    if (!open) return;
+    const node = scrollAreaRef.current;
+    if (!node) return;
+
+    const updateStickyAxisPosition = () => {
+      setStickyAxisPosition({
+        markerY: node.scrollTop + node.clientHeight - AXIS_MARKER_OFFSET,
+        labelY: node.scrollTop + node.clientHeight - AXIS_LABEL_OFFSET,
+      });
+    };
+
+    updateStickyAxisPosition();
+    node.addEventListener("scroll", updateStickyAxisPosition, { passive: true });
+    window.addEventListener("resize", updateStickyAxisPosition);
+
+    return () => {
+      node.removeEventListener("scroll", updateStickyAxisPosition);
+      window.removeEventListener("resize", updateStickyAxisPosition);
+    };
+  }, [open, timelineHeight, selectedTimelineView, tasks.length]);
+
+  const axisMarkerY = stickyAxisPosition.markerY || Math.max(0, timelineHeight - AXIS_MARKER_OFFSET);
+  const axisLabelY = stickyAxisPosition.labelY || Math.max(0, timelineHeight - AXIS_LABEL_OFFSET);
+
   const highlightedAxisItems = Array.from(
     new Map(
       tasks
@@ -2438,6 +2507,7 @@ function TimelineDetailsModal({ t, open, tasks, columns, onClose, onOpenTask, on
         .filter(Boolean)
     ).values()
   );
+
   const highlightedAxisDates = new Set(
     tasks
       .map((task) => {
@@ -2558,18 +2628,19 @@ function TimelineDetailsModal({ t, open, tasks, columns, onClose, onOpenTask, on
             ) : (
               <div className="grid gap-5">
                 <div className={cx("rounded-[1.75rem] border p-4", t.cardSolid)}>
-                  <div
-                    ref={chartRef}
-                    className="relative w-full overflow-hidden rounded-3xl px-3 pb-14 pt-5 select-none"
-                    style={{ height: `${timelineHeight}px` }}
-                  >
+                  <div ref={scrollAreaRef} className="timeline-glass-scroll relative max-h-[68vh] overflow-auto rounded-3xl">
+                    <div
+                      ref={chartRef}
+                      className="relative w-full overflow-hidden rounded-3xl px-3 pb-28 pt-5 select-none"
+                      style={{ height: `${timelineHeight}px`, minWidth: "100%" }}
+                    >
                       <div className={cx("absolute left-3 top-1 z-20 rounded-full px-2.5 py-1 text-[10px] font-black ring-1", t.chip)}>{preset.unitLabel}</div>
                       <div className="absolute inset-x-3 top-6 bottom-12">
                         {tasks.map((task, index) => (
                           <div
                             key={`line-${task.id}`}
                             className={cx("absolute left-0 right-0 border-t border-dashed", t.border)}
-                            style={{ top: `${index * 42 + 34}px`, opacity: 0.55 }}
+                            style={{ top: `${index * timelineRowHeight + 40}px`, opacity: 0.55 }}
                           />
                         ))}
                       </div>
@@ -2586,28 +2657,32 @@ function TimelineDetailsModal({ t, open, tasks, columns, onClose, onOpenTask, on
 
                       {tasks.map((task, index) => {
                         const visibleDueDate = dragPreview.taskId === task.id && dragPreview.dueDate ? dragPreview.dueDate : task.dueDate;
-                        const rawDue = parseLocalDate(visibleDueDate);
-                        const dueIsVisible = rawDue && rawDue >= visibleRangeStart && rawDue <= visibleRangeEnd;
-                        const displayDueDate = visibleDueDate;
-                        const due = parseLocalDate(displayDueDate);
+                        const due = parseLocalDate(visibleDueDate);
                         const column = columns.find((item) => item.id === task.columnId);
                         const barClass = column?.accent || "from-slate-400 to-slate-600";
                         const taskProgress = progressOf(task);
                         const markerPercent = percentForDate(due);
                         const pillLeft = clampNumber(markerPercent, 8, 92);
-                        const rowTop = index * 42 + 38;
+                        const rowTop = index * timelineRowHeight + 42;
                         const isDragging = draggingTaskId === task.id;
 
                         return (
                           <React.Fragment key={task.id}>
                             <span
-                              className={cx("pointer-events-none absolute z-20 w-[2px] -translate-x-1/2 rounded-full shadow-[0_0_12px_rgba(168,85,247,.32)]", isDarkTimeline ? "bg-gradient-to-b from-white/65 via-violet-300/70 to-sky-300/30" : "bg-gradient-to-b from-violet-600/65 via-fuchsia-500/48 to-sky-400/30")}
-                              style={{ left: `${markerPercent}%`, top: `${rowTop + 44}px`, bottom: "38px" }}
+                              className={cx(
+                                "pointer-events-none absolute z-20 w-[2px] -translate-x-1/2 rounded-full shadow-[0_0_12px_rgba(168,85,247,.32)]",
+                                isDarkTimeline ? "bg-gradient-to-b from-white/65 via-violet-300/70 to-sky-300/30" : "bg-gradient-to-b from-violet-600/65 via-fuchsia-500/48 to-sky-400/30"
+                              )}
+                              style={{
+                                left: `${markerPercent}%`,
+                                top: `${rowTop + 44}px`,
+                                height: `${Math.max(0, axisMarkerY - (rowTop + 44))}px`,
+                              }}
                             />
                             <span
-                              className="pointer-events-none absolute z-30 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-violet-400 shadow-[0_0_14px_rgba(168,85,247,.58)] ring-2 ring-white/65"
-                              style={{ left: `${markerPercent}%`, bottom: "38px" }}
-                              title={`Marker: ${formatDate(displayDueDate, { day: "2-digit", month: "2-digit", year: "numeric" })}`}
+                              className="pointer-events-none absolute z-30 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-400 shadow-[0_0_14px_rgba(168,85,247,.58)] ring-2 ring-white/65"
+                              style={{ left: `${markerPercent}%`, top: `${axisMarkerY}px` }}
+                              title={`Marker: ${formatDate(visibleDueDate, { day: "2-digit", month: "2-digit", year: "numeric" })}`}
                             />
                             <button
                               type="button"
@@ -2622,15 +2697,15 @@ function TimelineDetailsModal({ t, open, tasks, columns, onClose, onOpenTask, on
                                 barClass
                               )}
                               style={{ top: `${rowTop}px`, left: `${pillLeft}%`, width: "clamp(120px, 20%, 220px)" }}
-                              title={`${task.title} — termin: ${formatDate(displayDueDate, { day: "2-digit", month: "2-digit", year: "numeric" })}`}
+                              title={`${task.title} — termin: ${formatDate(visibleDueDate, { day: "2-digit", month: "2-digit", year: "numeric" })}`}
                             >
                               <span className="block truncate text-xs font-black">{task.title}</span>
                               <span className="block truncate text-[10px] font-bold opacity-85">
-                                {column?.title || "Bez etapu"} • {taskProgress}% • {formatDate(displayDueDate, { day: "2-digit", month: "2-digit" })}
+                                {column?.title || "Bez etapu"} • {taskProgress}% • {formatDate(visibleDueDate, { day: "2-digit", month: "2-digit" })}
                               </span>
                               {isDragging && (
                                 <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-slate-950 shadow-lg">
-                                  {formatDate(displayDueDate, { day: "2-digit", month: "long" })}
+                                  {formatDate(visibleDueDate, { day: "2-digit", month: "long" })}
                                 </span>
                               )}
                             </button>
@@ -2639,29 +2714,32 @@ function TimelineDetailsModal({ t, open, tasks, columns, onClose, onOpenTask, on
                       })}
 
                       <AnimatePresence initial={false}>
-                        {highlightedAxisItems.map((item) => {
-                          const date = item.date;
-                          return (
-                            <motion.div
-                              key={`floating-date-${item.key}`}
-                              className="pointer-events-none absolute z-40 -translate-x-1/2"
-                              style={{ left: `${percentForDate(date)}%`, bottom: "48px" }}
-                              initial={{ opacity: 0, y: 18, scale: 0.86 }}
-                              animate={{ opacity: 1, y: -8, scale: 1 }}
-                              exit={{ opacity: 0, y: 14, scale: 0.9 }}
-                              transition={{ type: "spring", stiffness: 360, damping: 24, mass: 0.65 }}
-                            >
-                              <span className={cx("relative inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-black shadow-lg ring-1 backdrop-blur-md", isDarkTimeline ? "bg-slate-950/82 text-violet-100 ring-violet-300/25 shadow-violet-950/30" : "bg-white/92 text-violet-700 ring-violet-200/80 shadow-violet-200/70")}>
-                                <span className="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[2px] bg-inherit ring-1 ring-inherit" />
-                                <span className="relative z-10">{item.label}</span>
-                              </span>
-                            </motion.div>
-                          );
-                        })}
+                        {highlightedAxisItems.map((item) => (
+                          <motion.div
+                            key={`floating-date-${item.key}`}
+                            className="pointer-events-none absolute z-40 -translate-x-1/2 -translate-y-full"
+                            style={{ left: `${percentForDate(item.date)}%`, top: `${axisLabelY}px` }}
+                            initial={{ opacity: 0, y: 18, scale: 0.86 }}
+                            animate={{ opacity: 1, y: -8, scale: 1 }}
+                            exit={{ opacity: 0, y: 14, scale: 0.9 }}
+                            transition={{ type: "spring", stiffness: 360, damping: 24, mass: 0.65 }}
+                          >
+                            <span className={cx("relative inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-black shadow-lg ring-1 backdrop-blur-md", isDarkTimeline ? "bg-slate-950/82 text-violet-100 ring-violet-300/25 shadow-violet-950/30" : "bg-white/92 text-violet-700 ring-violet-200/80 shadow-violet-200/70")}>
+                              <span className="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[2px] bg-inherit ring-1 ring-inherit" />
+                              <span className="relative z-10">{item.label}</span>
+                            </span>
+                          </motion.div>
+                        ))}
                       </AnimatePresence>
 
-                      <div className={cx("pointer-events-none absolute bottom-0 left-0 right-0 z-30 h-12 rounded-b-3xl border-t backdrop-blur-md", isDarkTimeline ? "border-white/10 bg-slate-950/78" : "border-white/70 bg-white/78")} />
-                      <div className="absolute bottom-2 left-0 right-0 z-40 h-9">
+                      <div
+                        className={cx("pointer-events-none absolute inset-x-0 z-30 h-14 rounded-b-3xl border-t backdrop-blur-md", isDarkTimeline ? "border-white/10 bg-slate-950/78" : "border-white/70 bg-white/78")}
+                        style={{ top: `${Math.max(0, axisLabelY + 19)}px` }}
+                      />
+                      <div
+                        className="pointer-events-none absolute inset-x-0 z-40 h-14"
+                        style={{ top: `${Math.max(0, axisLabelY + 23)}px` }}
+                      >
                         {axisTicks.map((tick, index) => {
                           const tickKey = dateKey(tick.date);
                           const isHighlightedDate = highlightedAxisDates.has(tickKey);
@@ -2678,8 +2756,9 @@ function TimelineDetailsModal({ t, open, tasks, columns, onClose, onOpenTask, on
                           );
                         })}
                       </div>
-                  </div>
+                    </div>
                 </div>
+              </div>
 
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {tasks.map((task) => {
@@ -3824,12 +3903,12 @@ function EditTaskModal({ t, isDark, draft, columns, draftExists, setDraft, onClo
 
               <div className={cx("rounded-2xl border p-3", t.buttonSoft)}>
                 <span className={cx("mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-wide", t.textSoft)}><Activity size={14} /> Postęp</span>
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="min-w-[5rem]">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
                     <p className="text-lg font-black">{progress}%</p>
                     <p className={cx("text-[10px] font-bold", t.textSoft)}>{doneSubtasks}/{allSubtasks} subtasków</p>
                   </div>
-                  <div className={cx("h-2 min-w-[8rem] flex-1 overflow-hidden rounded-full", t.progressTrack)}>
+                  <div className={cx("h-2 flex-1 overflow-hidden rounded-full", t.progressTrack)}>
                     <div className={cx("h-full rounded-full bg-gradient-to-r", currentColumn?.accent || "from-pink-400 to-sky-400")} style={{ width: `${progress}%` }} />
                   </div>
                 </div>
