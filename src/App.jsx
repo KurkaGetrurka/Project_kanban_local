@@ -282,10 +282,10 @@ function clampNumber(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 const timelineViewPresets = {
-  week: { label: "Tydzień", days: 7, width: 180, unitLabel: "Dni", unit: "day" },
-  month: { label: "Miesiąc", days: 31, width: 150, unitLabel: "Dni miesiąca", unit: "monthDay" },
-  quarter: { label: "Kwartał", days: 92, width: 135, unitLabel: "Tygodnie", unit: "week" },
-  year: { label: "Rok", days: 365, width: 120, unitLabel: "Miesiące", unit: "month" },
+  week: { label: "Tydzień", days: 7, unitLabel: "Dni", unit: "day" },
+  month: { label: "Miesiąc", days: 31, unitLabel: "Dni miesiąca", unit: "monthDay" },
+  quarter: { label: "Kwartał", days: 92, unitLabel: "Tygodnie", unit: "week" },
+  year: { label: "Rok", days: 365, unitLabel: "Miesiące", unit: "month" },
 };
 function normalizeTimelineView(value) {
   return timelineViewPresets[value] ? value : "month";
@@ -426,18 +426,6 @@ function getTaskImages(task) {
 }
 function selectOptionStyle(t) {
   return t === theme.dark ? { backgroundColor: "#0f172a", color: "#f8fafc" } : { backgroundColor: "#ffffff", color: "#0f172a" };
-}
-function dateTone(dateString) {
-  if (!dateString) return "neutral";
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const due = parseLocalDate(dateString);
-  if (!due) return "neutral";
-  due.setHours(0, 0, 0, 0);
-  const days = Math.round((due - today) / 86400000);
-  if (days < 0) return "overdue";
-  if (days <= 2) return "soon";
-  return "later";
 }
 function columnForTask(task, columns = defaultColumns) {
   return (Array.isArray(columns) ? columns : defaultColumns).find((column) => column.id === task?.columnId) || defaultColumns[0];
@@ -636,6 +624,32 @@ function filterArchivedTasks(tasks, query, dateFilters = {}) {
     const matchesText = !search || text.includes(search);
     return matchesText && taskMatchesArchiveDateRange(task, dateFilters);
   });
+}
+function taskMatchesTaskBoardFilters(task, filters = {}) {
+  const search = normalizeSearchText(filters.search);
+  const labelQuery = normalizeSearchText(filters.labelQuery);
+  const priority = filters.priority || "all";
+  const from = startOfSearchDay(filters.from);
+  const to = endOfSearchDay(filters.to);
+  const dueDate = task.dueDate ? coerceSearchDate(task.dueDate) : null;
+  const searchableText = normalizeSearchText([
+    task.title,
+    task.description,
+    task.dueDate,
+    priorityMeta(task.priority).title,
+    ...buildDateSearchVariants(task.dueDate),
+    ...(task.labels || []).map((label) => label.text),
+    ...(task.subtasks || []).map((item) => item.text),
+  ].join(" "));
+  const normalizedLabels = normalizeSearchText((task.labels || []).map((label) => label.text).join(" "));
+  const matchesSearch = !search || searchableText.includes(search);
+  const matchesLabel = !labelQuery || normalizedLabels.includes(labelQuery);
+  const matchesPriority = priority === "all" ? true : normalizeTaskPriority(task.priority) === priority;
+  const matchesDate = (!from && !to) ? true : Boolean(dueDate && (!from || dueDate >= from) && (!to || dueDate <= to));
+  return matchesSearch && matchesLabel && matchesPriority && matchesDate;
+}
+function filterTaskBoardTasks(tasks, filters = {}) {
+  return (Array.isArray(tasks) ? tasks : []).filter((task) => taskMatchesTaskBoardFilters(task, filters));
 }
 function buildTaskImageGallery(tasks) {
   return (Array.isArray(tasks) ? tasks : []).flatMap((task) =>
@@ -969,10 +983,10 @@ export default function AestheticKanbanBoard() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
-  const importInputRef = useRef(null);
   const [selectedGalleryImage, setSelectedGalleryImage] = useState(null);
   const [draft, setDraft] = useState(null);
   const [quickTask, setQuickTask] = useState(() => ({ title: "", columnId: "todo", dueDate: dateKey(new Date()), priority: "medium" }));
+  const [taskFilters, setTaskFilters] = useState(() => ({ search: "", labelQuery: "", priority: "all", from: "", to: "" }));
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
@@ -993,9 +1007,21 @@ export default function AestheticKanbanBoard() {
   }, [columns, tasks, darkMode, fontScale, dashboardOrder, dashboardSizes, activeSection]);
 
   const activeTasks = useMemo(() => tasks.filter((task) => !task.archivedAt), [tasks]);
+  const filteredActiveTasks = useMemo(() => filterTaskBoardTasks(activeTasks, taskFilters), [activeTasks, taskFilters]);
+  const taskLabelSuggestions = useMemo(() => {
+    const labelsMap = new Map();
+    activeTasks.forEach((task) => {
+      (task.labels || []).forEach((label) => {
+        const text = String(label?.text || "").trim();
+        const normalized = normalizeSearchText(text);
+        if (!text || !normalized || labelsMap.has(normalized)) return;
+        labelsMap.set(normalized, text);
+      });
+    });
+    return Array.from(labelsMap.values()).sort((a, b) => a.localeCompare(b, "pl-PL")).slice(0, 10);
+  }, [activeTasks]);
   const archivedTasks = useMemo(() => tasks.filter((task) => task.archivedAt).sort((a, b) => (b.archivedAt || 0) - (a.archivedAt || 0)), [tasks]);
   const dueTasks = useMemo(() => activeTasks.filter((task) => task.dueDate), [activeTasks]);
-  const timelineTasks = useMemo(() => dueTasks.slice().sort((a, b) => a.dueDate.localeCompare(b.dueDate)).slice(0, 6), [dueTasks]);
   const timelineAllTasks = useMemo(() => dueTasks.slice().sort((a, b) => a.dueDate.localeCompare(b.dueDate)), [dueTasks]);
   const taskImages = useMemo(() => buildTaskImageGallery(tasks), [tasks]);
   const backupText = useMemo(() => JSON.stringify(buildBackupPayload({ columns, tasks, darkMode, fontScale, dashboardOrder, dashboardSizes, activeSection }), null, 2), [columns, tasks, darkMode, fontScale, dashboardOrder, dashboardSizes, activeSection]);
@@ -1023,6 +1049,9 @@ export default function AestheticKanbanBoard() {
     setGalleryOpen(false);
     setSelectedGalleryImage(null);
     openTask(task);
+  }
+  function clearTaskFilters() {
+    setTaskFilters({ search: "", labelQuery: "", priority: "all", from: "", to: "" });
   }
   function exportBackup() {
     setExportOpen(true);
@@ -1273,11 +1302,11 @@ export default function AestheticKanbanBoard() {
 
   const dashboardCards = {
     progress: <ProjectProgressCard t={t} progress={projectProgress} total={taskStats.total} done={taskStats.done} archived={archivedTasks.length} />,
-    today: <QuickAddPanel t={t} columns={columns} quickTask={quickTask} setQuickTask={setQuickTask} onQuickAdd={quickAddTask} onOpenFull={() => openNewTask(quickTask.columnId || "todo")} upcomingTasks={upcomingTasks} onOpenTask={openTask} />,
+    today: <QuickAddPanel t={t} columns={columns} quickTask={quickTask} setQuickTask={setQuickTask} onQuickAdd={quickAddTask} upcomingTasks={upcomingTasks} onOpenTask={openTask} />,
     calendar: <MonthCalendar t={t} isDark={isDark} month={calendarMonth} tasks={dueTasks} columns={columns} onOpenTask={openTask} onCreateTaskForDate={(selectedDate) => openNewTask("todo", selectedDate)} onPreviousMonth={() => setCalendarMonth((date) => new Date(date.getFullYear(), date.getMonth() - 1, 1))} onNextMonth={() => setCalendarMonth((date) => new Date(date.getFullYear(), date.getMonth() + 1, 1))} onToday={() => { const today = new Date(); setCalendarMonth(new Date(today.getFullYear(), today.getMonth(), 1)); }} onOpenCalendar={() => setCalendarOpen(true)} />,
     taskProgress: <TaskProgressCard t={t} columnStats={columnStats} total={taskStats.total} />,
     actions: <DashboardActionsCard t={t} archivedCount={archivedTasks.length} galleryCount={taskImages.length} onNewTask={() => openNewTask("todo")} onArchive={() => setArchiveOpen(true)} onPerformance={() => setPerformanceOpen(true)} onGallery={() => setGalleryOpen(true)} />,
-    timeline: <TimelineCard t={t} tasks={timelineAllTasks} month={calendarMonth} columns={columns} onOpenTask={openTask} onOpenDetails={() => setTimelineOpen(true)} />,
+    timeline: <TimelineCard t={t} tasks={timelineAllTasks} columns={columns} onOpenTask={openTask} onOpenDetails={() => setTimelineOpen(true)} />,
   };
 
   return (
@@ -1290,8 +1319,6 @@ export default function AestheticKanbanBoard() {
           fontScale={fontScale}
           activeSection={activeSection}
           isLayoutEditing={isLayoutEditing}
-          archiveCount={archivedTasks.length}
-          galleryCount={taskImages.length}
           onToggleDark={() => setDarkMode((value) => !value)}
           onDecreaseFont={() => setFontScale((value) => clampFontScale(value - 5))}
           onIncreaseFont={() => setFontScale((value) => clampFontScale(value + 5))}
@@ -1299,35 +1326,21 @@ export default function AestheticKanbanBoard() {
           onShowInfo={() => { setActiveSection("info"); setIsLayoutEditing(false); }}
           onShowTasks={() => { setActiveSection("tasks"); setIsLayoutEditing(false); }}
           onShowHelp={() => { setActiveSection("help"); setIsLayoutEditing(false); }}
-          onNewTask={() => openNewTask("todo")}
-          onOpenTimeline={() => { setActiveSection("info"); setTimelineOpen(true); setIsLayoutEditing(false); }}
           onOpenPerformance={() => { setActiveSection("info"); setPerformanceOpen(true); setIsLayoutEditing(false); }}
-          onOpenGallery={() => { setActiveSection("info"); setGalleryOpen(true); setIsLayoutEditing(false); }}
-          onOpenArchive={() => { setActiveSection("info"); setArchiveOpen(true); setIsLayoutEditing(false); }}
           onToggleLayout={() => { setActiveSection("info"); setIsLayoutEditing((value) => !value); }}
           onResetLayout={() => setDashboardOrder(defaultDashboardOrder)}
           onResetSizes={() => setDashboardSizes(defaultDashboardSizes)}
           onExportBackup={exportBackup}
           onImportBackup={requestImportBackup}
         />
-        <input
-          ref={importInputRef}
-          type="file"
-          accept="application/json,.json"
-          className="hidden"
-          onChange={(event) => {
-            importBackupFile(event.target.files?.[0]);
-            event.target.value = "";
-          }}
-        />
 
         <header className="mb-5">
           <div className={cx("mb-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold shadow-sm ring-1 backdrop-blur", isDark ? "bg-white/10 text-violet-200 ring-white/10" : "bg-white/75 text-violet-600 ring-violet-100")}><LayoutDashboard size={14} /> Pulpit projektu</div>
           <h1 className="text-3xl font-black tracking-tight sm:text-5xl">Tablica zadań i postępów projektu</h1>
-          <p className={cx("mt-2 max-w-2xl text-sm leading-6 sm:text-base", t.textMuted)}>Przejrzysty panel do planowania pracy, kontroli terminów oraz monitorowania postępów na tablicy Kanban.</p>
+          <p className={cx("mt-2 max-w-2xl text-sm leading-6 sm:text-base", t.textMuted)}>Przejrzysty panel do planowania pracy, kontroli terminów, filtrowania zadań oraz monitorowania postępów na tablicy Kanban.</p>
         </header>
 
-        <SectionTabs t={t} activeSection={activeSection} onChange={(section) => { setActiveSection(section); setIsLayoutEditing(false); }} />
+        <SectionTabs activeSection={activeSection} onChange={(section) => { setActiveSection(section); setIsLayoutEditing(false); }} />
 
         <AnimatePresence mode="wait" initial={false}>
           {activeSection === "info" ? (
@@ -1348,8 +1361,18 @@ export default function AestheticKanbanBoard() {
               onOpenArchive={() => { setActiveSection("info"); setArchiveOpen(true); }}
             />
           ) : (
-            <motion.section key="tasks-section" data-task-board className="grid w-full grid-cols-4 items-stretch gap-3 pb-4 lg:gap-4" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-              {columns.map((column) => <Column key={column.id} t={t} isDark={isDark} column={column} tasks={activeTasks.filter((task) => task.columnId === column.id)} onOpenNew={() => openNewTask(column.id)} onOpenTask={openTask} onMoveTask={moveTask} onToggleSubtask={toggleSubtaskDone} draggedTaskId={draggedTaskId} setDraggedTaskId={setDraggedTaskId} />)}
+            <motion.section key="tasks-section" className="grid gap-4" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+              <TaskFiltersPanel
+                t={t}
+                filters={taskFilters}
+                setFilters={setTaskFilters}
+                onClear={clearTaskFilters}
+                visibleCount={filteredActiveTasks.length}
+                totalCount={activeTasks.length}
+              />
+              <div data-task-board className="grid w-full grid-cols-4 items-stretch gap-3 pb-4 lg:gap-4">
+                {columns.map((column) => <Column key={column.id} t={t} isDark={isDark} column={column} tasks={filteredActiveTasks.filter((task) => task.columnId === column.id)} onOpenNew={() => openNewTask(column.id)} onOpenTask={openTask} onMoveTask={moveTask} onToggleSubtask={toggleSubtaskDone} draggedTaskId={draggedTaskId} setDraggedTaskId={setDraggedTaskId} />)}
+              </div>
             </motion.section>
           )}
         </AnimatePresence>
@@ -1434,8 +1457,6 @@ function TopToolbar({
   fontScale,
   activeSection,
   isLayoutEditing,
-  archiveCount,
-  galleryCount,
   onToggleDark,
   onDecreaseFont,
   onIncreaseFont,
@@ -1443,11 +1464,7 @@ function TopToolbar({
   onShowInfo,
   onShowTasks,
   onShowHelp,
-  onNewTask,
-  onOpenTimeline,
   onOpenPerformance,
-  onOpenGallery,
-  onOpenArchive,
   onToggleLayout,
   onResetLayout,
   onResetSizes,
@@ -1633,9 +1650,10 @@ function HelpGuide({ t, onGoToInfo, onGoToTasks, onNewTask, onOpenTimeline, onOp
         intro: "Sekcja Informacje służy do szybkiego sprawdzenia stanu pracy bez wchodzenia w każdą kartę osobno. To miejsce najlepiej traktować jako panel kontrolny projektu.",
         points: [
           "Project Progress pokazuje ogólny udział zadań ukończonych w aktywnej pracy.",
-          "Today's Tasks pozwala szybko dodać nowe zadanie z terminem i etapem.",
+          "Today's Tasks pozwala szybko dodać nowe zadanie z tytułem, terminem i etapem.",
           "Calendar pokazuje miesiąc oraz dni, do których przypisano zadania.",
-          "Tasks Timeline daje wizualny podgląd terminów na osi czasu."
+          "Tasks Timeline daje wizualny podgląd bieżącego tygodnia i prowadzi do pełnej osi czasu.",
+          "Przycisk Układ w górnym pasku pozwala zmieniać kolejność i rozmiary kafelków pulpitu."
         ],
         tip: "Najlepiej zaczynać dzień od Dashboardu: szybko zobaczysz, co jest pilne, co utknęło i czy coś zbliża się do terminu."
       },
@@ -1652,10 +1670,11 @@ function HelpGuide({ t, onGoToInfo, onGoToTasks, onNewTask, onOpenTimeline, onOp
         points: [
           "Kliknięcie karty otwiera okno edycji.",
           "Zmiana etapu odbywa się przez wybór w oknie edycji albo przeciągnięcie karty między kolumnami.",
+          "Zakładka Zadania ma kompaktowy pasek filtrów: wyszukiwanie po treści, etykiecie, priorytecie i zakresie dat.",
           "Subtaski pomagają rozbić większe zadanie na mniejsze kroki.",
           "Zdjęcia dodane do karty pojawią się także w galerii zdjęć."
         ],
-        tip: "Dla większych spraw twórz subtaski. Dzięki temu postęp będzie bardziej czytelny niż samo przerzucanie karty między kolumnami."
+        tip: "Dla większych spraw twórz subtaski i etykiety. Dzięki temu postęp i późniejsze filtrowanie są dużo czytelniejsze."
       },
     },
     {
@@ -1666,7 +1685,7 @@ function HelpGuide({ t, onGoToInfo, onGoToTasks, onNewTask, onOpenTimeline, onOp
       accent: "from-sky-400 to-blue-500",
       details: {
         title: "Timeline — planowanie w czasie",
-        intro: "Timeline pokazuje zadania według ich terminów. W małej kafelce widzisz szybki podgląd, a po kliknięciu kafelki otwiera się szczegółowy widok osi czasu.",
+        intro: "Timeline pokazuje zadania według ich terminów. W małej kafelce widzisz szybki podgląd aktualnego tygodnia, a po kliknięciu kafelki otwiera się szczegółowy widok osi czasu.",
         points: [
           "Możesz wybrać zakres widoku: tydzień, miesiąc, kwartał albo rok.",
           "Przeciągnięcie paska zadania w szczegółowym widoku zmienia termin w oryginalnej karcie.",
@@ -1688,6 +1707,7 @@ function HelpGuide({ t, onGoToInfo, onGoToTasks, onNewTask, onOpenTimeline, onOp
         points: [
           "Zarchiwizowane zadania znikają z głównej tablicy Kanban.",
           "Nadal są uwzględniane w raporcie postępów i galerii zdjęć.",
+          "Archiwum ma wyszukiwarkę tekstową oraz filtry dat: od/do i tryb sprawdzania terminu albo daty archiwizacji.",
           "Możesz otworzyć kartę z archiwum i przywrócić ją do kolumny Gotowe.",
           "Usuwanie jest osobną akcją i oznacza trwałe skasowanie karty z aplikacji."
         ],
@@ -1713,6 +1733,24 @@ function HelpGuide({ t, onGoToInfo, onGoToTasks, onNewTask, onOpenTimeline, onOp
       },
     },
     {
+      id: "backup",
+      icon: <Upload size={26} />,
+      title: "Kopia zapasowa",
+      hint: "Eksport i import danych tablicy",
+      accent: "from-violet-400 to-indigo-500",
+      details: {
+        title: "Kopia zapasowa — zapis i odtwarzanie tablicy",
+        intro: "Z górnego paska możesz wykonać eksport oraz import danych tablicy. Kopia zapasowa zapisuje stan aplikacji do pliku JSON albo do tekstu, który można ręcznie skopiować i wkleić.",
+        points: [
+          "Eksport obejmuje zadania, archiwum, zdjęcia, układ kafelków, aktywny widok, tryb kolorystyczny i wielkość tekstu.",
+          "Import zastępuje aktualne dane zapisane w tej przeglądarce.",
+          "Jeśli przeglądarka zablokuje pobieranie pliku, można skopiować treść eksportu i zapisać ją ręcznie jako plik .json.",
+          "Import działa zarówno z pliku JSON, jak i z wklejonej treści eksportu."
+        ],
+        tip: "Przed większymi zmianami zrób eksport. To najszybsza polisa ubezpieczeniowa dla tablicy."
+      },
+    },
+    {
       id: "report",
       icon: <Activity size={26} />,
       title: "Raport",
@@ -1734,7 +1772,7 @@ function HelpGuide({ t, onGoToInfo, onGoToTasks, onNewTask, onOpenTimeline, onOp
 
   const navigationCards = [
     { icon: <LayoutDashboard size={28} />, title: "Dashboard", hint: "Postęp, kalendarz i panel sterowania", action: onGoToInfo, accent: "from-violet-400 to-fuchsia-500", tag: "Informacje" },
-    { icon: <Plus size={28} />, title: "Nowe zadanie", hint: "Otwiera pełną kartę edycji", action: onNewTask, accent: "from-sky-400 to-cyan-500", tag: "Start" },
+    { icon: <Plus size={28} />, title: "Nowe zadanie", hint: "Otwiera pełną kartę edycji zadania", action: onNewTask, accent: "from-sky-400 to-cyan-500", tag: "Start" },
     { icon: <CheckSquare2 size={28} />, title: "Tablica zadań", hint: "Kolumny Kanban i przesuwanie kart", action: onGoToTasks, accent: "from-emerald-400 to-teal-500", tag: "Zadania" },
     { icon: <Clock3 size={28} />, title: "Timeline", hint: "Szczegółowy widok terminów", action: onOpenTimeline, accent: "from-blue-400 to-sky-500", tag: "Plan" },
     { icon: <Activity size={28} />, title: "Raport", hint: "Postęp, wydajność i archiwum", action: onOpenPerformance, accent: "from-cyan-400 to-violet-500", tag: "Analiza" },
@@ -1749,7 +1787,7 @@ function HelpGuide({ t, onGoToInfo, onGoToTasks, onNewTask, onOpenTimeline, onOp
           <div>
             <div className={cx("mb-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black shadow-sm", t.buttonPrimary)}><BookOpen size={14} /> Instrukcja obsługi</div>
             <h2 className="text-2xl font-black">Szybki przewodnik po aplikacji</h2>
-            <p className={cx("mt-1 max-w-2xl text-sm leading-6", t.textMuted)}>Najważniejsze działania są pokazane skrótowo. Szczegółowy opis znajdziesz po kliknięciu wybranej kafelki.</p>
+            <p className={cx("mt-1 max-w-2xl text-sm leading-6", t.textMuted)}>Najważniejsze działania są pokazane skrótowo. Szczegółowy opis znajdziesz po kliknięciu wybranej kafelki — uwzględnia też filtry zadań, archiwum oraz kopie zapasowe.</p>
           </div>
           <div className={cx("flex items-center gap-2 rounded-full px-3 py-2 text-xs font-black ring-1", t.chip)}><Sparkles size={15} /> kliknij kafelkę, żeby rozwinąć</div>
         </div>
@@ -1911,24 +1949,12 @@ function QuickAddPanel({ t, columns, quickTask, setQuickTask, onQuickAdd, upcomi
           <button type="button" onClick={onQuickAdd} disabled={!quickTask.title.trim()} className="rounded-2xl bg-violet-600 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-violet-300/40 transition hover:-translate-y-0.5 disabled:opacity-40">Dodaj</button>
         </div>
 
-        <label className="grid gap-1.5">
-          <span className={cx("px-1 text-[10px] font-black uppercase tracking-wide", t.textSoft)}>Priorytet</span>
-          <PriorityToggleGroup
-            value={quickTask.priority}
-            onChange={(priority) => setQuickTask((current) => ({ ...current, priority }))}
-            isDark={t === theme.dark}
-            compact
-          />
-        </label>
-
         <div className="grid gap-2">
           {upcomingTasks.slice(0, 3).map((task) => {
-            const priority = priorityMeta(task.priority);
             return (
               <button type="button" key={task.id} onClick={() => onOpenTask(task)} className={cx("flex items-center gap-2 rounded-2xl px-3 py-2 text-left text-xs font-semibold transition hover:-translate-y-0.5 hover:shadow-sm", t.subtle)}>
                 <span className={cx("h-4 w-4 rounded-md border", t.border)} />
                 <span className="min-w-0 flex-1 truncate">{task.title}</span>
-                <span className={cx("rounded-full px-2 py-1 text-[9px] font-black ring-1", priorityChipClass(task.priority, t === theme.dark))}>{priority.title}</span>
                 <span className={cx("text-[10px]", t.textSoft)}>{formatDate(task.dueDate)}</span>
               </button>
             );
@@ -1939,6 +1965,82 @@ function QuickAddPanel({ t, columns, quickTask, setQuickTask, onQuickAdd, upcomi
     </DashboardCard>
   );
 }
+function TaskFiltersPanel({ t, filters, setFilters, onClear, visibleCount, totalCount }) {
+  const hasFilters = Boolean(filters.search.trim() || filters.labelQuery.trim() || filters.priority !== "all" || filters.from || filters.to);
+
+  return (
+    <section className={cx("overflow-x-auto rounded-[1.15rem] border px-2 py-1.5 shadow-lg backdrop-blur-xl", t.card)}>
+      <div className="flex min-w-max items-center gap-1.5 whitespace-nowrap">
+        <div className={cx("inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-black ring-1", t.chip)}>
+          <Search size={11} />
+          <span>{visibleCount}/{totalCount}</span>
+        </div>
+
+        <label className="relative block">
+          <Search size={12} className={cx("pointer-events-none absolute left-2 top-1/2 -translate-y-1/2", t.textSoft)} />
+          <input
+            value={filters.search}
+            onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
+            placeholder="Szukaj..."
+            className={cx("h-7 w-36 rounded-xl border pl-7 pr-2 text-[11px] font-semibold outline-none ring-violet-300 transition focus:ring-2", t.inputSolid)}
+          />
+        </label>
+
+        <label className="relative block">
+          <Sparkles size={12} className={cx("pointer-events-none absolute left-2 top-1/2 -translate-y-1/2", t.textSoft)} />
+          <input
+            value={filters.labelQuery}
+            onChange={(event) => setFilters((current) => ({ ...current, labelQuery: event.target.value }))}
+            placeholder="Etykieta..."
+            className={cx("h-7 w-32 rounded-xl border pl-7 pr-2 text-[11px] font-semibold outline-none ring-pink-300 transition focus:ring-2", t.inputSolid)}
+          />
+        </label>
+
+        <select
+          value={filters.priority}
+          onChange={(event) => setFilters((current) => ({ ...current, priority: event.target.value }))}
+          className={cx("h-7 rounded-xl border px-2 text-[11px] font-black outline-none ring-sky-300 transition focus:ring-2", t.inputSolid)}
+        >
+          <option value="all" style={selectOptionStyle(t)}>Priorytet: wszystkie</option>
+          {priorityOptions.map((priority) => (
+            <option key={priority.id} value={priority.id} style={selectOptionStyle(t)}>{priority.title}</option>
+          ))}
+        </select>
+
+        <label className="flex items-center gap-1">
+          <span className={cx("text-[10px] font-black", t.textSoft)}>Od</span>
+          <input
+            type="date"
+            value={filters.from}
+            onChange={(event) => setFilters((current) => ({ ...current, from: event.target.value }))}
+            className={cx("h-7 rounded-xl border px-2 text-[11px] font-bold outline-none ring-sky-300 transition focus:ring-2", t.inputSolid)}
+          />
+        </label>
+
+        <label className="flex items-center gap-1">
+          <span className={cx("text-[10px] font-black", t.textSoft)}>Do</span>
+          <input
+            type="date"
+            value={filters.to}
+            min={filters.from || undefined}
+            onChange={(event) => setFilters((current) => ({ ...current, to: event.target.value }))}
+            className={cx("h-7 rounded-xl border px-2 text-[11px] font-bold outline-none ring-sky-300 transition focus:ring-2", t.inputSolid)}
+          />
+        </label>
+
+        <button
+          type="button"
+          onClick={onClear}
+          disabled={!hasFilters}
+          className={cx("inline-flex h-7 items-center justify-center gap-1 rounded-xl border px-2.5 text-[11px] font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.buttonSoft)}
+        >
+          <X size={12} /> Czyść
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function MonthCalendar({ t, isDark, month, tasks, columns = defaultColumns, onOpenTask, onCreateTaskForDate, onPreviousMonth, onNextMonth, onToday, onOpenCalendar }) {
   const [selectedDayKey, setSelectedDayKey] = useState("");
   const days = buildMonthDays(month);
@@ -2298,7 +2400,7 @@ function DashboardActionsCard({ t, archivedCount, galleryCount, onNewTask, onArc
     </DashboardCard>
   );
 }
-function TimelineCard({ t, tasks, month, columns, onOpenTask, onOpenDetails }) {
+function TimelineCard({ t, tasks, columns, onOpenTask, onOpenDetails }) {
   const isDarkTimeline = t === theme.dark;
   const today = new Date();
   today.setHours(12, 0, 0, 0);
@@ -2309,7 +2411,7 @@ function TimelineCard({ t, tasks, month, columns, onOpenTask, onOpenDetails }) {
     const due = parseLocalDate(task.dueDate);
     return due && due >= weekStart && due <= weekEnd;
   });
-  const visibleTasks = weeklyTasks.slice(0, 4);
+  const visibleTasks = weeklyTasks;
   const rangeMs = Math.max(1, weekEnd.getTime() - weekStart.getTime());
   const percentForDate = (date) => clampNumber(((date.getTime() - weekStart.getTime()) / rangeMs) * 100, 0, 100);
   const axisDays = Array.from({ length: 7 }, (_, index) => {
@@ -2350,7 +2452,7 @@ function TimelineCard({ t, tasks, month, columns, onOpenTask, onOpenDetails }) {
   return (
     <DashboardCard t={t}>
       <div role="button" tabIndex={0} onClick={onOpenDetails} onKeyDown={handleKeyDown} className="flex h-full cursor-pointer flex-col rounded-[1.5rem] outline-none transition focus:ring-4 focus:ring-sky-300/40">
-        <DashboardTitle t={t} icon={<Clock3 size={12} />} eyebrow="Plan" title={`Tasks Timeline • ${rangeLabel}`} badge={visibleTasks.length} />
+        <DashboardTitle t={t} icon={<Clock3 size={12} />} eyebrow="Plan" title={`Tasks Timeline • ${rangeLabel}`} badge={weeklyTasks.length} />
         <div className="relative min-h-[180px] flex-1 overflow-hidden rounded-3xl px-2 pb-12 pt-3">
           <div className="absolute inset-x-2 top-4 bottom-12">
             {[0, 1, 2, 3].map((line) => (
@@ -2628,7 +2730,7 @@ function TimelineDetailsModal({ t, open, tasks, columns, onClose, onOpenTask, on
             ) : (
               <div className="grid gap-5">
                 <div className={cx("rounded-[1.75rem] border p-4", t.cardSolid)}>
-                  <div ref={scrollAreaRef} className="timeline-glass-scroll relative max-h-[68vh] overflow-auto rounded-3xl">
+                  <div ref={scrollAreaRef} className="timeline-glass-scroll relative max-h-[58vh] overflow-auto rounded-3xl">
                     <div
                       ref={chartRef}
                       className="relative w-full overflow-hidden rounded-3xl px-3 pb-28 pt-5 select-none"
@@ -3462,31 +3564,14 @@ function GalleryModal({ t, open, images, selected, onSelect, onClose, onClosePre
 function ExportBackupModal({ t, open, backupText, fileName, onClose, onDownload }) {
   const textareaRef = useRef(null);
   const [copied, setCopied] = useState(false);
-  const [downloadUrl, setDownloadUrl] = useState("");
   const [downloadNotice, setDownloadNotice] = useState("");
-  const [manualMode, setManualMode] = useState(true);
 
   useEffect(() => {
     setDownloadNotice("");
     setCopied(false);
-    setManualMode(true);
-    if (!open || typeof URL === "undefined") {
-      setDownloadUrl("");
-      return undefined;
-    }
-
-    const blob = new Blob([backupText], { type: "application/json;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    setDownloadUrl(url);
-
-    return () => {
-      URL.revokeObjectURL(url);
-      setDownloadUrl("");
-    };
   }, [open, backupText]);
 
   function selectBackupText() {
-    setManualMode(true);
     window.setTimeout(() => {
       textareaRef.current?.focus();
       textareaRef.current?.select();
@@ -3494,23 +3579,8 @@ function ExportBackupModal({ t, open, backupText, fileName, onClose, onDownload 
     setDownloadNotice("Zaznaczyłam treść eksportu. Użyj Ctrl+C, wklej do Notatnika i zapisz jako plik .json.");
   }
 
-  function openJsonPreview() {
-    setManualMode(true);
-    setDownloadNotice("Podgląd w nowej karcie bywa blokowany przez Canvas. Treść eksportu jest poniżej — użyj „Zaznacz całość” albo „Kopiuj treść”.");
-    try {
-      const popup = window.open("", "_blank", "noopener,noreferrer");
-      if (!popup) return;
-      popup.document.open();
-      popup.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${fileName}</title><style>body{margin:0;padding:24px;background:#0f172a;color:#e2e8f0;font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;white-space:pre-wrap;word-break:break-word}</style></head><body>${backupText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</body></html>`);
-      popup.document.close();
-      setDownloadNotice("Otworzyłam tekst JSON w nowej karcie. Zapisz go przez Ctrl+S jako plik .json albo skopiuj treść.");
-    } catch {
-      setDownloadNotice("Przeglądarka zablokowała nową kartę. Treść eksportu jest poniżej — użyj „Zaznacz całość”.");
-    }
-  }
 
   async function handleDownloadClick() {
-    setManualMode(true);
     setDownloadNotice("Próbuję pobrać plik JSON. Jeśli przeglądarka nic nie pokaże, użyj bezpiecznej metody: „Zaznacz całość”.");
     const result = await onDownload?.();
     if (result?.reason === "cancelled") {
@@ -3528,7 +3598,6 @@ function ExportBackupModal({ t, open, backupText, fileName, onClose, onDownload 
     try {
       await navigator.clipboard.writeText(backupText);
       setCopied(true);
-      setManualMode(true);
       setDownloadNotice("Skopiowano treść eksportu do schowka. Wklej ją do Notatnika i zapisz jako plik .json.");
       setTimeout(() => setCopied(false), 1800);
     } catch {
