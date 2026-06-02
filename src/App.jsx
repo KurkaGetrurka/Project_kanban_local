@@ -217,7 +217,7 @@ function priorityChipClass(priority, isDark) {
 }
 function PriorityToggleGroup({ value, onChange, isDark, compact = false }) {
   return (
-    <div className={cx("flex w-full flex-nowrap items-center justify-between", compact ? "gap-1.5" : "gap-2") }>
+    <div className={cx("grid w-full grid-cols-2", compact ? "gap-1.5 sm:grid-cols-2" : "gap-2 sm:grid-cols-4") }>
       {priorityOptions.map((priority) => {
         const isActive = normalizeTaskPriority(value) === priority.id;
         return (
@@ -226,12 +226,13 @@ function PriorityToggleGroup({ value, onChange, isDark, compact = false }) {
             type="button"
             onClick={() => onChange(priority.id)}
             className={cx(
-              "min-w-0 flex-1 rounded-full px-2 py-1.5 text-center text-[11px] font-black ring-1 transition hover:-translate-y-0.5",
+              "min-w-0 rounded-2xl px-2 py-2 text-center text-[11px] font-black leading-tight ring-1 transition hover:-translate-y-0.5",
+              compact ? "min-h-[40px]" : "min-h-[44px]",
               isActive
-                ? priorityChipClass(priority.id, isDark)
+                ? cx(priorityChipClass(priority.id, isDark), "shadow-sm")
                 : isDark
-                  ? "bg-white/5 text-slate-300 ring-white/10 hover:bg-white/10"
-                  : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"
+                  ? "bg-white/5 text-slate-300 ring-white/10 hover:bg-white/10 hover:ring-violet-300/35"
+                  : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50 hover:ring-violet-300"
             )}
             aria-pressed={isActive}
             title={`Ustaw priorytet: ${priority.title}`}
@@ -3869,7 +3870,7 @@ function EditTaskModal({ t, isDark, draft, columns, draftExists, setDraft, onClo
               <button type="button" onClick={onClose} className={cx("shrink-0 rounded-2xl p-2 transition", t.hoverSoft, t.textMuted)}><X /></button>
             </div>
 
-            <div className="mb-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mb-4 grid gap-3 sm:grid-cols-2">
               <label className={cx("rounded-2xl border p-3", t.buttonSoft)}>
                 <span className={cx("mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-wide", t.textSoft)}><LayoutDashboard size={14} /> Etap</span>
                 <select
@@ -3891,14 +3892,14 @@ function EditTaskModal({ t, isDark, draft, columns, draftExists, setDraft, onClo
                 />
               </label>
 
-              <label className={cx("rounded-2xl border p-3", t.buttonSoft)}>
+              <div className={cx("rounded-2xl border p-3", t.buttonSoft)}>
                 <span className={cx("mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-wide", t.textSoft)}><Sparkles size={14} /> Priorytet</span>
                 <PriorityToggleGroup
                   value={draft.priority}
                   onChange={(priority) => setDraft({ ...draft, priority })}
                   isDark={isDark}
                 />
-              </label>
+              </div>
 
               <div className={cx("rounded-2xl border p-3", t.buttonSoft)}>
                 <span className={cx("mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-wide", t.textSoft)}><Activity size={14} /> Postęp</span>
