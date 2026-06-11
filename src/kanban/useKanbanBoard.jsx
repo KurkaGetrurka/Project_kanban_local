@@ -13,7 +13,6 @@ import {
   defaultDashboardSizes,
   downloadTextFile,
   emptyDraft,
-  filterTaskBoardTasks,
   getTaskImages,
   hasImportableKanbanData,
   loadInitialState,
@@ -39,13 +38,6 @@ const createQuickTaskState = () => ({
   priority: "medium",
 });
 
-const createTaskFiltersState = () => ({
-  search: "",
-  labelQuery: "",
-  priority: "all",
-  from: "",
-  to: "",
-});
 
 const createTaskSortState = () => ({
   mode: "manual",
@@ -137,7 +129,6 @@ export function useKanbanBoard() {
   const [selectedGalleryImage, setSelectedGalleryImage] = useState(null);
   const [draft, setDraft] = useState(null);
   const [quickTask, setQuickTask] = useState(createQuickTaskState);
-  const [taskFilters, setTaskFilters] = useState(createTaskFiltersState);
   const [taskSort, setTaskSort] = useState(createTaskSortState);
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const today = new Date();
@@ -173,8 +164,7 @@ export function useKanbanBoard() {
 
   // Derived board state
   const activeTasks = useMemo(() => tasks.filter((task) => !task.archivedAt), [tasks]);
-  const filteredActiveTasks = useMemo(() => filterTaskBoardTasks(activeTasks, taskFilters), [activeTasks, taskFilters]);
-  const sortedFilteredActiveTasks = useMemo(() => sortTaskBoardTasks(filteredActiveTasks, taskSort), [filteredActiveTasks, taskSort]);
+  const sortedActiveTasks = useMemo(() => sortTaskBoardTasks(activeTasks, taskSort), [activeTasks, taskSort]);
   const archivedTasks = useMemo(() => tasks.filter((task) => task.archivedAt).sort((a, b) => (b.archivedAt || 0) - (a.archivedAt || 0)), [tasks]);
   const dueTasks = useMemo(() => activeTasks.filter((task) => task.dueDate), [activeTasks]);
   const timelineAllTasks = useMemo(() => dueTasks.slice().sort((a, b) => a.dueDate.localeCompare(b.dueDate)), [dueTasks]);
@@ -225,9 +215,6 @@ export function useKanbanBoard() {
     setGalleryOpen(false);
     setSelectedGalleryImage(null);
     openTask(task);
-  }
-  function clearTaskFilters() {
-    setTaskFilters(createTaskFiltersState());
   }
   function clearTaskSort() {
     setTaskSort(createTaskSortState());
@@ -539,12 +526,10 @@ export function useKanbanBoard() {
       draft,
       draftExists,
       quickTask,
-      taskFilters,
       taskSort,
       calendarMonth,
       activeTasks,
-      filteredActiveTasks,
-      sortedFilteredActiveTasks,
+      sortedActiveTasks,
       archivedTasks,
       dueTasks,
       timelineAllTasks,
@@ -567,7 +552,6 @@ export function useKanbanBoard() {
       setPerformanceOpen,
       setQuickTask,
       setSelectedGalleryImage,
-      setTaskFilters,
       setTaskSort,
       setTimelineOpen,
     },
@@ -578,7 +562,6 @@ export function useKanbanBoard() {
       attachTaskImage,
       changeDashboardWidgetSize,
       changeSection,
-      clearTaskFilters,
       clearTaskSort,
       closeModal,
       decreaseFont,
