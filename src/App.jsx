@@ -1,6 +1,6 @@
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarDays, CircleHelp, LayoutDashboard, ListChecks } from "lucide-react";
+import { Activity, CalendarDays, CircleHelp, GripVertical, LayoutDashboard, ListChecks, Moon, RotateCcw, Sun, Upload } from "lucide-react";
 import UrlopTab from "./kanban/UrlopTab.jsx";
 
 import {
@@ -23,7 +23,6 @@ import {
   TaskProgressCard,
   TimelineCard,
   TimelineDetailsModal,
-  TopToolbar,
 } from "./kanban/components.jsx";
 
 import {
@@ -125,6 +124,303 @@ function TaskSortPanel({ t, sort, setSort, onClear, visibleCount }) {
         Reset
       </button>
     </section>
+  );
+}
+
+function TodayBadge({ t }) {
+  const [nowMs, setNowMs] = React.useState(() => Date.now());
+
+  React.useEffect(() => {
+    const tick = () => setNowMs(Date.now());
+
+    tick();
+    const timer = window.setInterval(tick, 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const now = new Date(nowMs);
+  const seconds = now.getSeconds();
+  const minutes = now.getMinutes();
+  const hours = now.getHours();
+
+  const secondAngle = seconds * 6;
+  const minuteAngle = (minutes + seconds / 60) * 6;
+  const hourAngle = ((hours % 12) + minutes / 60) * 30;
+
+  const dateLabel = now.toLocaleDateString("pl-PL", {
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
+  const timeLabel = now.toLocaleTimeString("pl-PL", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
+  return (
+    <div
+      className={cx(
+        "flex min-w-0 items-center gap-2 px-1 text-xs font-black",
+        t.textSoft
+      )}
+      title={`Dzisiejsza data i godzina: ${dateLabel}, ${timeLabel}`}
+    >
+      <svg
+        viewBox="0 0 48 48"
+        className="h-9 w-9 shrink-0 overflow-visible"
+        aria-hidden="true"
+      >
+        <circle
+          cx="24"
+          cy="24"
+          r="21"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          opacity="0.26"
+        />
+
+        {[0, 1, 2, 3].map((tick) => (
+          <line
+            key={tick}
+            x1="24"
+            y1="5"
+            x2="24"
+            y2="9"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            opacity="0.38"
+            transform={`rotate(${tick * 90} 24 24)`}
+          />
+        ))}
+
+        <line
+          x1="24"
+          y1="24"
+          x2="24"
+          y2="14"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          opacity="0.82"
+          transform={`rotate(${hourAngle} 24 24)`}
+        />
+
+        <line
+          x1="24"
+          y1="24"
+          x2="24"
+          y2="10"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          opacity="0.72"
+          transform={`rotate(${minuteAngle} 24 24)`}
+        />
+
+        <line
+          x1="24"
+          y1="27"
+          x2="24"
+          y2="7"
+          stroke="currentColor"
+          strokeWidth="1.3"
+          strokeLinecap="round"
+          opacity="0.92"
+          transform={`rotate(${secondAngle} 24 24)`}
+        />
+
+        <circle cx="24" cy="24" r="2.5" fill="currentColor" opacity="0.9" />
+      </svg>
+
+      <span className="whitespace-nowrap capitalize">
+        {dateLabel}
+      </span>
+    </div>
+  );
+}
+
+function ControlToolbar({
+  t,
+  darkMode,
+  fontScale,
+  isLayoutEditing,
+  onToggleDark,
+  onDecreaseFont,
+  onIncreaseFont,
+  onResetFont,
+  onOpenPerformance,
+  onToggleLayout,
+  onResetLayout,
+  onResetSizes,
+  onExportBackup,
+  onImportBackup,
+}) {
+  const quickActions = [
+    { label: "Raport", icon: <Activity size={15} />, action: onOpenPerformance },
+    { label: "Eksport", icon: <Upload size={15} />, action: onExportBackup },
+    { label: "Import", icon: <RotateCcw size={15} />, action: onImportBackup },
+  ];
+
+  return (
+    <div
+      className={cx(
+        "sticky top-3 z-30 mb-4 w-full overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl",
+        t.card
+      )}
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-300/70 to-transparent" />
+
+      <div className="flex w-full flex-wrap items-center justify-between gap-2 p-2.5">
+        <TodayBadge t={t} />
+
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          {quickActions.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={item.action}
+              className={cx(
+                "inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black shadow-sm transition hover:-translate-y-0.5",
+                t.buttonSoft
+              )}
+              title={item.label}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onToggleDark}
+            className={cx(
+              "inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black shadow-sm transition hover:-translate-y-0.5",
+              t.buttonSoft
+            )}
+            title="Przełącz tryb jasny/ciemny"
+          >
+            {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+            <span className="hidden sm:inline">
+              {darkMode ? "Jasny" : "Ciemny"}
+            </span>
+          </button>
+
+          <div
+            className={cx(
+              "inline-flex items-center overflow-hidden rounded-xl border shadow-sm",
+              t.buttonSoft
+            )}
+            title="Wielkość tekstu"
+          >
+            <button
+              type="button"
+              onClick={onDecreaseFont}
+              className={cx("px-3 py-2 text-xs font-black transition", t.hoverSoft)}
+            >
+              A−
+            </button>
+
+            <button
+              type="button"
+              onClick={onResetFont}
+              className={cx(
+                "border-x px-3 py-2 text-xs font-black transition",
+                t.divider,
+                t.hoverSoft
+              )}
+            >
+              {fontScale}%
+            </button>
+
+            <button
+              type="button"
+              onClick={onIncreaseFont}
+              className={cx("px-3 py-2 text-xs font-black transition", t.hoverSoft)}
+            >
+              A+
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={onToggleLayout}
+            className={cx(
+              "inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black shadow-sm transition hover:-translate-y-0.5",
+              isLayoutEditing ? t.actionPrimary : t.buttonSoft
+            )}
+            title={
+              isLayoutEditing
+                ? "Zakończ zmianę układu"
+                : "Edytuj układ kafelków dashboardu"
+            }
+          >
+            <GripVertical size={16} />
+            <span className="hidden xl:inline">
+              {isLayoutEditing ? "Zakończ edycję" : "Układ"}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {isLayoutEditing && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div
+              className={cx(
+                "mx-2.5 mb-2.5 rounded-xl border p-2",
+                t.buttonSoft
+              )}
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className={cx("px-2 text-xs font-bold", t.textMuted)}>
+                  Tryb edycji układu jest aktywny — przeciągaj kafelki na
+                  pulpicie albo zmień ich rozmiar przyciskiem na kafelce.
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={onResetLayout}
+                    className={cx(
+                      "inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black transition hover:-translate-y-0.5",
+                      t.buttonSoft
+                    )}
+                  >
+                    <RotateCcw size={15} />
+                    Reset układu
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onResetSizes}
+                    className={cx(
+                      "inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black transition hover:-translate-y-0.5",
+                      t.buttonSoft
+                    )}
+                  >
+                    <RotateCcw size={15} />
+                    Reset rozmiarów
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -243,19 +539,15 @@ export default function AestheticKanbanBoard() {
       <FontScaleStyles />
 
       <main className="mx-auto max-w-7xl">
-        <TopToolbar
+        <ControlToolbar
           t={state.t}
           darkMode={state.darkMode}
           fontScale={state.fontScale}
-          activeSection={state.activeSection}
           isLayoutEditing={state.isLayoutEditing}
           onToggleDark={actions.toggleDarkMode}
           onDecreaseFont={actions.decreaseFont}
           onIncreaseFont={actions.increaseFont}
           onResetFont={actions.resetFont}
-          onShowInfo={actions.showInfoSection}
-          onShowTasks={actions.showTasksSection}
-          onShowHelp={actions.showHelpSection}
           onOpenPerformance={actions.openPerformanceFromToolbar}
           onToggleLayout={actions.toggleLayoutEditing}
           onResetLayout={actions.resetDashboardLayout}
@@ -264,18 +556,22 @@ export default function AestheticKanbanBoard() {
           onImportBackup={actions.requestImportBackup}
         />
 
-        <header className="mb-3 flex items-center">
-          <div className={cx("inline-flex items-center gap-2 text-sm font-black", state.t.textSoft)}>
-            <CurrentSectionIcon size={18} strokeWidth={2.5} />
-            <span>{currentSectionMeta.label}</span>
-          </div>
-        </header>
+        <div className="mb-6 flex min-h-[210px] w-full items-center justify-center">
+          <div className="grid w-fit place-items-center gap-4 text-center">
+            <header className="flex w-full items-center justify-center">
+              <div className={cx("inline-flex items-center justify-center gap-2 text-sm font-black", state.t.textSoft)}>
+                <CurrentSectionIcon size={18} strokeWidth={2.5} />
+                <span>{currentSectionMeta.label}</span>
+              </div>
+            </header>
 
-        <div className="mb-8 flex w-full justify-center">
-          <SectionTabs
-            activeSection={state.activeSection}
-            onChange={actions.changeSection}
-          />
+            <div className="flex w-full justify-center">
+              <SectionTabs
+                activeSection={state.activeSection}
+                onChange={actions.changeSection}
+              />
+            </div>
+          </div>
         </div>
 
         <AnimatePresence mode="wait" initial={false}>
