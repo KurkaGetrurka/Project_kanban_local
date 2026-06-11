@@ -202,12 +202,12 @@ export function useKanbanBoard() {
     const result = await downloadTextFile(backupFileName(), backupText);
     if (result?.reason === "cancelled") return result;
     if (!result?.ok) {
-      alert("Przegl\u0105darka zablokowa\u0142a automatyczne pobranie. Skopiuj zawarto\u015b\u0107 kopii z okna eksportu i zapisz j\u0105 r\u0119cznie jako plik .json.");
+      alert("Przeglądarka zablokowała automatyczne pobranie. Skopiuj zawartość kopii z okna eksportu i zapisz ją ręcznie jako plik .json.");
     }
     return result;
   }
   function applyImportedBackup(parsed) {
-    if (!hasImportableKanbanData(parsed)) throw new Error("Wybrany plik nie wygl\u0105da jak kopia zapasowa tej tablicy. Brakuje listy zada\u0144.");
+    if (!hasImportableKanbanData(parsed)) throw new Error("Wybrany plik nie wygląda jak kopia zapasowa tej tablicy. Brakuje listy zadań.");
     const normalized = normalizeImportedState(parsed, persistedBoardState);
     const importedCount = countImportableTasks(parsed);
     const nextState = {
@@ -236,7 +236,7 @@ export function useKanbanBoard() {
       safeStorageSetItem(STORAGE_KEY, JSON.stringify(nextState));
       window.dispatchEvent(new CustomEvent("kanban-imported", { detail: { importedCount, restoredCount: nextState.tasks.length } }));
     }
-    alert(`Kopia zapasowa zosta\u0142a wczytana. Odczytano ${importedCount} kart, przywr\u00f3cono ${nextState.tasks.length}.`);
+    alert(`Kopia zapasowa została wczytana. Odczytano ${importedCount} kart, przywrócono ${nextState.tasks.length}.`);
   }
   function requestImportBackup() {
     setImportOpen(true);
@@ -248,7 +248,7 @@ export function useKanbanBoard() {
       const parsed = parseBackupText(text);
       applyImportedBackup(parsed);
     } catch (error) {
-      alert(error.message || "Nie uda\u0142o si\u0119 wczyta\u0107 kopii zapasowej. Sprawd\u017a, czy wybrany plik jest prawid\u0142owym plikiem JSON z tej aplikacji.");
+      alert(error.message || "Nie udało się wczytać kopii zapasowej. Sprawdź, czy wybrany plik jest prawidłowym plikiem JSON z tej aplikacji.");
     }
   }
   function importBackupText(text) {
@@ -257,7 +257,7 @@ export function useKanbanBoard() {
       applyImportedBackup(parsed);
       return true;
     } catch (error) {
-      alert(error.message || "Nie uda\u0142o si\u0119 wczyta\u0107 kopii zapasowej. Sprawd\u017a tre\u015b\u0107 JSON z eksportu.");
+      alert(error.message || "Nie udało się wczytać kopii zapasowej. Sprawdź treść JSON z eksportu.");
       return false;
     }
   }
@@ -331,7 +331,7 @@ export function useKanbanBoard() {
       const images = await Promise.all(files.map(readImageAttachment));
       setDraft((current) => ({ ...current, images: [...getTaskImages(current), ...images], image: undefined }));
     } catch (error) {
-      alert(error.message || "Nie uda\u0142o si\u0119 doda\u0107 jednego ze zdj\u0119\u0107.");
+      alert(error.message || "Nie udało się dodać jednego ze zdjęć.");
     }
   }
   function removeTaskImage(imageId) {

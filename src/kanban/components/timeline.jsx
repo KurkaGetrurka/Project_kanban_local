@@ -64,7 +64,7 @@ export function TimelineCard({ t, tasks, columns, onOpenTask, onOpenDetails }) {
       <DashboardCard t={t}>
         <div role="button" tabIndex={0} onClick={onOpenDetails} onKeyDown={handleKeyDown} className="flex h-full cursor-pointer flex-col rounded-[1.5rem] outline-none transition focus:ring-4 focus:ring-sky-300/40">
           <DashboardTitle t={t} icon={<Clock3 size={12} />} eyebrow="Plan" title={`Tasks Timeline - ${rangeLabel}`} badge={0} />
-          <p className={cx("flex flex-1 items-center rounded-2xl p-4 text-sm", t.subtle)}>Brak task\u00f3w w najbli\u017cszych 7 dniach. Timeline ma chwil\u0119 ciszy.</p>
+          <p className={cx("flex flex-1 items-center rounded-2xl p-4 text-sm", t.subtle)}>Brak tasków w najbliższych 7 dniach. Timeline ma chwilę ciszy.</p>
         </div>
       </DashboardCard>
     );
@@ -320,10 +320,10 @@ export function TimelineDetailsModal({ t, open, tasks, columns, onClose, onOpenT
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <div className={cx("mb-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black shadow-sm", t.buttonPrimary)}>
-                  <Clock3 size={14} /> Szczeg\u00f3\u0142owy timeline
+                  <Clock3 size={14} /> Szczegółowy timeline
                 </div>
-                <h2 className="text-2xl font-black">Plan zada\u0144 na osi czasu</h2>
-                <p className={cx("mt-1 text-sm", t.textMuted)}>Przeci\u0105gnij pasek zadania po osi czasu, aby zmieni\u0107 jego termin w oryginalnej karcie.</p>
+                <h2 className="text-2xl font-black">Plan zadań na osi czasu</h2>
+                <p className={cx("mt-1 text-sm", t.textMuted)}>Przeciągnij pasek zadania po osi czasu, aby zmienić jego termin w oryginalnej karcie.</p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <span className={cx("text-xs font-black", t.textMuted)}>Zakres:</span>
                   {Object.entries(timelineViewPresets).map(([key, item]) => (
@@ -336,7 +336,7 @@ export function TimelineDetailsModal({ t, open, tasks, columns, onClose, onOpenT
                       {item.label}
                     </button>
                   ))}
-                  <span className={cx("text-xs", t.textSoft)}>O\u015b pokazuje teraz skal\u0119 wybranego zakresu: dni, tygodnie albo miesi\u0105ce.</span>
+                  <span className={cx("text-xs", t.textSoft)}>Oś pokazuje teraz skalę wybranego zakresu: dni, tygodnie albo miesiące.</span>
                 </div>
               </div>
 
@@ -347,7 +347,7 @@ export function TimelineDetailsModal({ t, open, tasks, columns, onClose, onOpenT
 
             {!hasTasks ? (
               <div className={cx("rounded-3xl border border-dashed p-8 text-center text-sm", t.border, t.textMuted)}>
-                Brak task\u00f3w z terminami. Timeline siedzi w ciszy i udaje kalendarz zen.
+                Brak tasków z terminami. Timeline siedzi w ciszy i udaje kalendarz zen.
               </div>
             ) : (
               <div className="grid gap-5">
@@ -493,7 +493,7 @@ export function TimelineDetailsModal({ t, open, tasks, columns, onClose, onOpenT
                         <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-black">
                           <span className={cx("rounded-full px-2.5 py-1 ring-1", t.chip)}>{column?.title || "Bez etapu"}</span>
                           <span className={cx("rounded-full px-2.5 py-1 ring-1", t.chip)}>{formatDate(task.dueDate, { day: "2-digit", month: "long", year: "numeric" })}</span>
-                          <span className={cx("rounded-full px-2.5 py-1 ring-1", t.chip)}>{completed}/{total} subtask\u00f3w</span>
+                          <span className={cx("rounded-full px-2.5 py-1 ring-1", t.chip)}>{completed}/{total} subtasków</span>
                         </div>
                         <div className={cx("mt-3 h-2 overflow-hidden rounded-full", t.progressTrack)}>
                           <div className="h-full rounded-full bg-gradient-to-r from-pink-400 to-sky-400 transition-all" style={{ width: `${taskProgress}%` }} />

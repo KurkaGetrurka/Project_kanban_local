@@ -12,7 +12,7 @@ export function ProjectProgressCard({ t, progress, total, done, archived }) {
 
   return (
     <DashboardCard t={t}>
-      <DashboardTitle t={t} icon={<TrendingUp size={12} />} eyebrow="Post\u0119p" title="Post\u0119p projektu" />
+      <DashboardTitle t={t} icon={<TrendingUp size={12} />} eyebrow="Postęp" title="Postęp projektu" />
 
       <div className="flex items-center justify-center">
         <div className="relative h-40 w-40">
@@ -40,7 +40,7 @@ export function ProjectProgressCard({ t, progress, total, done, archived }) {
 
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
             <span className="text-3xl font-black">{progress}%</span>
-            <span className={cx("text-xs font-semibold", t.textMuted)}>uko\u0144czone</span>
+            <span className={cx("text-xs font-semibold", t.textMuted)}>ukończone</span>
           </div>
         </div>
       </div>
@@ -125,7 +125,7 @@ export function QuickAddPanel({ t, columns, quickTask, setQuickTask, onQuickAdd,
           ))}
 
           {upcomingTasks.length === 0 && (
-            <p className={cx("rounded-2xl p-3 text-xs", t.subtle)}>Brak najbli\u017cszych termin\u00f3w. Podejrzanie mi\u0142o.</p>
+            <p className={cx("rounded-2xl p-3 text-xs", t.subtle)}>Brak najbliższych terminów. Podejrzanie miło.</p>
           )}
         </div>
       </div>
@@ -152,7 +152,7 @@ export function TaskProgressCard({ t, columnStats, total }) {
                   layout
                   className={cx("w-full rounded-xl bg-gradient-to-t shadow-lg transition-all", column.accent)}
                   style={{ height }}
-                  title={`${column.title}: ${column.count} task\u00f3w`}
+                  title={`${column.title}: ${column.count} tasków`}
                 />
               </div>
 
@@ -176,17 +176,17 @@ export function DashboardActionsCard({ t, archivedCount, galleryCount, onNewTask
       <div className="grid gap-3">
         <button type="button" onClick={onNewTask} className={cx("group inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-4 text-sm font-bold shadow-lg transition hover:-translate-y-0.5", t.actionPrimary)}>
           <Plus size={18} className="transition group-hover:rotate-90" />
-          Dodaj wi\u0119ksze zadanie
+          Dodaj większe zadanie
         </button>
 
         <button type="button" onClick={onPerformance} className={cx("inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-4 text-sm font-bold shadow-sm transition hover:-translate-y-0.5", t.actionSecondary)}>
           <Activity size={18} />
-          Raport post\u0119p\u00f3w
+          Raport postępów
         </button>
 
         <button type="button" onClick={onGallery} className={cx("inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-4 text-sm font-bold shadow-sm transition hover:-translate-y-0.5", t.actionSecondary)}>
           <ImageIcon size={18} />
-          Galeria zdj\u0119\u0107 ({galleryCount})
+          Galeria zdjęć ({galleryCount})
         </button>
 
         <button type="button" onClick={onArchive} className={cx("inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-4 text-sm font-bold shadow-sm transition hover:-translate-y-0.5", t.actionSecondary)}>
