@@ -22,6 +22,7 @@ import {
   normalizeTaskPriority,
   parseBackupText,
   parseLocalDate,
+  progressOf,
   readImageAttachment,
   readTextFile,
   reorderDashboardOrder,
@@ -45,6 +46,72 @@ const createTaskFiltersState = () => ({
   from: "",
   to: "",
 });
+
+const createTaskSortState = () => ({
+  mode: "manual",
+});
+
+const priorityRank = {
+  urgent: 4,
+  high: 3,
+  medium: 2,
+  low: 1,
+};
+
+function getSortableDateValue(task) {
+  const date = parseLocalDate(task?.dueDate);
+  return date ? date.getTime() : Number.POSITIVE_INFINITY;
+}
+
+function compareText(a, b) {
+  return String(a || "").localeCompare(String(b || ""), "pl", { sensitivity: "base" });
+}
+
+function sortTaskBoardTasks(tasks, sort) {
+  const mode = sort?.mode || "manual";
+  const list = Array.isArray(tasks) ? [...tasks] : [];
+
+  if (mode === "manual") return list;
+
+  const createdAt = (task) => Number(task?.createdAt) || 0;
+  const priorityValue = (task) => priorityRank[normalizeTaskPriority(task?.priority)] || 0;
+
+  return list.sort((a, b) => {
+    if (mode === "dueAsc") {
+      return getSortableDateValue(a) - getSortableDateValue(b) || createdAt(a) - createdAt(b);
+    }
+
+    if (mode === "dueDesc") {
+      return getSortableDateValue(b) - getSortableDateValue(a) || createdAt(a) - createdAt(b);
+    }
+
+    if (mode === "priorityDesc") {
+      return priorityValue(b) - priorityValue(a) || getSortableDateValue(a) - getSortableDateValue(b);
+    }
+
+    if (mode === "priorityAsc") {
+      return priorityValue(a) - priorityValue(b) || getSortableDateValue(a) - getSortableDateValue(b);
+    }
+
+    if (mode === "titleAsc") {
+      return compareText(a?.title, b?.title) || createdAt(a) - createdAt(b);
+    }
+
+    if (mode === "titleDesc") {
+      return compareText(b?.title, a?.title) || createdAt(a) - createdAt(b);
+    }
+
+    if (mode === "progressDesc") {
+      return progressOf(b) - progressOf(a) || getSortableDateValue(a) - getSortableDateValue(b);
+    }
+
+    if (mode === "progressAsc") {
+      return progressOf(a) - progressOf(b) || getSortableDateValue(a) - getSortableDateValue(b);
+    }
+
+    return 0;
+  });
+}
 
 export function useKanbanBoard() {
   // Base state
@@ -71,6 +138,7 @@ export function useKanbanBoard() {
   const [draft, setDraft] = useState(null);
   const [quickTask, setQuickTask] = useState(createQuickTaskState);
   const [taskFilters, setTaskFilters] = useState(createTaskFiltersState);
+  const [taskSort, setTaskSort] = useState(createTaskSortState);
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
@@ -106,6 +174,7 @@ export function useKanbanBoard() {
   // Derived board state
   const activeTasks = useMemo(() => tasks.filter((task) => !task.archivedAt), [tasks]);
   const filteredActiveTasks = useMemo(() => filterTaskBoardTasks(activeTasks, taskFilters), [activeTasks, taskFilters]);
+  const sortedFilteredActiveTasks = useMemo(() => sortTaskBoardTasks(filteredActiveTasks, taskSort), [filteredActiveTasks, taskSort]);
   const archivedTasks = useMemo(() => tasks.filter((task) => task.archivedAt).sort((a, b) => (b.archivedAt || 0) - (a.archivedAt || 0)), [tasks]);
   const dueTasks = useMemo(() => activeTasks.filter((task) => task.dueDate), [activeTasks]);
   const timelineAllTasks = useMemo(() => dueTasks.slice().sort((a, b) => a.dueDate.localeCompare(b.dueDate)), [dueTasks]);
@@ -159,6 +228,9 @@ export function useKanbanBoard() {
   }
   function clearTaskFilters() {
     setTaskFilters(createTaskFiltersState());
+  }
+  function clearTaskSort() {
+    setTaskSort(createTaskSortState());
   }
   function closeModal() {
     setDraft(null);
@@ -468,9 +540,11 @@ export function useKanbanBoard() {
       draftExists,
       quickTask,
       taskFilters,
+      taskSort,
       calendarMonth,
       activeTasks,
       filteredActiveTasks,
+      sortedFilteredActiveTasks,
       archivedTasks,
       dueTasks,
       timelineAllTasks,
@@ -494,6 +568,7 @@ export function useKanbanBoard() {
       setQuickTask,
       setSelectedGalleryImage,
       setTaskFilters,
+      setTaskSort,
       setTimelineOpen,
     },
     actions: {
@@ -504,6 +579,7 @@ export function useKanbanBoard() {
       changeDashboardWidgetSize,
       changeSection,
       clearTaskFilters,
+      clearTaskSort,
       closeModal,
       decreaseFont,
       deleteTask,
