@@ -4,6 +4,17 @@ function normalizeStorageKeys(storageKey, legacyKeys = []) {
   return [storageKey, ...(Array.isArray(legacyKeys) ? legacyKeys : [])].filter(Boolean).map(String);
 }
 
+function dispatchBrowserPersistenceChanged(disabled) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent("kanban-browser-persistence-changed", {
+      detail: {
+        disabled: Boolean(disabled),
+      },
+    })
+  );
+}
+
 export function isBrowserPersistenceDisabled() {
   if (typeof window === "undefined") return false;
   try {
@@ -44,28 +55,35 @@ export function installBrowserPersistenceGuard(storageKey, legacyKeys = []) {
 
 export function disableBrowserPersistenceForSession(storageKey, legacyKeys = []) {
   if (typeof window === "undefined") return false;
+  let sessionStorageUpdated = false;
+
   try {
     window.sessionStorage.setItem(BROWSER_PERSISTENCE_DISABLED_KEY, "1");
-    window.__KANBAN_BROWSER_PERSISTENCE_DISABLED__ = true;
-    installBrowserPersistenceGuard(storageKey, legacyKeys);
-    return true;
+    sessionStorageUpdated = true;
   } catch {
-    window.__KANBAN_BROWSER_PERSISTENCE_DISABLED__ = true;
-    installBrowserPersistenceGuard(storageKey, legacyKeys);
-    return false;
+    sessionStorageUpdated = false;
   }
+
+  window.__KANBAN_BROWSER_PERSISTENCE_DISABLED__ = true;
+  installBrowserPersistenceGuard(storageKey, legacyKeys);
+  dispatchBrowserPersistenceChanged(true);
+  return sessionStorageUpdated;
 }
 
 export function enableBrowserPersistenceForSession() {
   if (typeof window === "undefined") return false;
+  let sessionStorageUpdated = false;
+
   try {
     window.sessionStorage.removeItem(BROWSER_PERSISTENCE_DISABLED_KEY);
-    window.__KANBAN_BROWSER_PERSISTENCE_DISABLED__ = false;
-    return true;
+    sessionStorageUpdated = true;
   } catch {
-    window.__KANBAN_BROWSER_PERSISTENCE_DISABLED__ = false;
-    return false;
+    sessionStorageUpdated = false;
   }
+
+  window.__KANBAN_BROWSER_PERSISTENCE_DISABLED__ = false;
+  dispatchBrowserPersistenceChanged(false);
+  return sessionStorageUpdated;
 }
 
 export function shouldPersistToBrowserStorage() {
