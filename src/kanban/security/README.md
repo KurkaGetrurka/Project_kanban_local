@@ -35,7 +35,9 @@ Używany schemat:
 - moduł `fileDatabaseStorage.js` z pomocnikami File System Access API,
 - jawna akcja `Zaszyfruj i zapisz do wybranego pliku`, która tworzy zaszyfrowany plik roboczy w miejscu wskazanym przez użytkownika,
 - sesja plikowa: `Otwórz zaszyfrowaną bazę`, odblokowanie hasłem i zapis późniejszych zmian do tego samego zaszyfrowanego pliku,
-- pływający status bazy pokazujący tryb przeglądarkowy, aktywną sesję plikową, ostatni zapis albo błąd zapisu.
+- moduł `liveBoardSnapshot.js`, który trzyma w pamięci strony ostatnio odblokowany albo zapisany stan sesji plikowej dla panelu `Baza`,
+- pływający status bazy pokazujący tryb przeglądarkowy, aktywną sesję plikową, ostatni zapis albo błąd zapisu,
+- akcja `Zablokuj otwartą bazę` dostępna z panelu `Baza`, która zamyka sesję plikową, czyści starą kopię przeglądarkową i przeładowuje widok.
 
 ## Ważna uwaga o czyszczeniu localStorage
 
@@ -55,22 +57,24 @@ Przepływ docelowy w tym etapie:
 4. Hasło i uchwyt do pliku są trzymane tylko w pamięci aktywnej strony.
 5. Odszyfrowana baza jest przekazywana do głównej tablicy przez zdarzenie `kanban-file-database-opened`.
 6. Kolejne zmiany są debounced i zapisywane do tego samego pliku jako nowa zaszyfrowana koperta.
-7. Po odświeżeniu strony sesja znika i plik trzeba ponownie otworzyć hasłem.
+7. Ostatnio odblokowany albo zapisany stan jest dodatkowo trzymany w pamięci przez `liveBoardSnapshot.js`, żeby panel `Baza` nie musiał opierać się na starej kopii z `localStorage`.
+8. Po odświeżeniu strony sesja znika i plik trzeba ponownie otworzyć hasłem.
 
 ## Status bazy
 
-`SecurityDatabaseLauncher` pokazuje pływający pasek statusu nad przyciskiem `Baza`:
+`SecurityDatabaseLauncher` pokazuje krótkie pływające powiadomienie nad przyciskiem `Baza` tylko przy ważnych zdarzeniach:
 
 - `Tryb przeglądarkowy` — aplikacja nie ma aktywnej sesji plikowej i dane mogą nadal trafiać do lokalnej pamięci przeglądarki,
 - `Zapis do przeglądarki zatrzymany` — stara kopia została usunięta albo zapis do `localStorage` zatrzymano w tej sesji,
 - `Plik aktywny` — aplikacja pracuje na odblokowanym zaszyfrowanym pliku,
 - `Błąd zapisu bazy` — ostatnia próba zapisu do pliku się nie udała.
 
-Status reaguje na zdarzenia `kanban-file-database-opened`, `kanban-file-database-applied`, `kanban-file-database-saved`, `kanban-file-database-save-error`, `kanban-browser-persistence-changed` i `kanban-imported`.
+Autosave do aktywnego pliku aktualizuje status w tle, ale nie pokazuje powiadomienia przy każdym zapisie.
+
+Status reaguje na zdarzenia `kanban-file-database-opened`, `kanban-file-database-applied`, `kanban-file-database-saved`, `kanban-file-database-save-error`, `kanban-file-database-closed`, `kanban-live-board-snapshot-changed`, `kanban-browser-persistence-changed` i `kanban-imported`.
 
 ## Do zrobienia w kolejnych etapach
 
-1. Dodać przycisk `Zablokuj bazę`, który czyści odszyfrowane dane z pamięci aplikacji i zamyka sesję plikową.
-2. Dodać ekran startowy: `Otwórz bazę`, `Utwórz bazę`, `Zaszyfruj istniejącą bazę`.
-3. Rozważyć trzymanie wyprowadzonego klucza w pamięci sesji zamiast wykonywania PBKDF2 przy każdym autosave, jeżeli zapis będzie odczuwalnie wolny.
-4. Dodać bardziej widoczny proces zmiany hasła bazy.
+1. Dodać ekran startowy: `Otwórz bazę`, `Utwórz bazę`, `Zaszyfruj istniejącą bazę`.
+2. Rozważyć trzymanie wyprowadzonego klucza w pamięci sesji zamiast wykonywania PBKDF2 przy każdym autosave, jeżeli zapis będzie odczuwalnie wolny.
+3. Dodać bardziej widoczny proces zmiany hasła bazy.
