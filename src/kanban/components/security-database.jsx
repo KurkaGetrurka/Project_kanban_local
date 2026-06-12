@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Database, Download, ShieldCheck, Trash2, X } from "lucide-react";
+import { CheckCircle2, Database, Download, HardDrive, ShieldCheck, Trash2, X } from "lucide-react";
 
 import {
   LEGACY_KEYS,
@@ -15,6 +15,10 @@ import {
   hasKanbanBrowserStorage,
   isBrowserPersistenceDisabled,
 } from "../security/browserStoragePolicy.js";
+import {
+  isFileSystemAccessSupported,
+  saveEncryptedDatabaseFile,
+} from "../security/fileDatabaseStorage.js";
 
 function encryptedDatabaseFileName(fileName = "kanban-baza.json") {
   return String(fileName).replace(/\.json$/i, "-zaszyfrowana.kanban.json");
@@ -29,6 +33,8 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
   const [copied, setCopied] = useState(false);
   const [storageCopyDetected, setStorageCopyDetected] = useState(false);
   const [browserPersistenceDisabled, setBrowserPersistenceDisabled] = useState(false);
+  const [fileSystemSupported, setFileSystemSupported] = useState(false);
+  const [lastFileSaveName, setLastFileSaveName] = useState("");
 
   const storageSummary = useMemo(() => {
     const keys = [STORAGE_KEY, ...LEGACY_KEYS];
@@ -47,8 +53,10 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
     setNotice("");
     setBusy(false);
     setCopied(false);
+    setLastFileSaveName("");
     setStorageCopyDetected(hasKanbanBrowserStorage(STORAGE_KEY, LEGACY_KEYS));
     setBrowserPersistenceDisabled(isBrowserPersistenceDisabled());
+    setFileSystemSupported(isFileSystemAccessSupported());
   }, [open, backupText]);
 
   function validatePassword() {
@@ -80,7 +88,7 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
       const encryptedPayload = await encryptKanbanDatabase(payload, nextPassword);
       const nextEncryptedText = JSON.stringify(encryptedPayload, null, 2);
       setEncryptedText(nextEncryptedText);
-      setNotice("Baza została zaszyfrowana. Pobierz plik albo skopiuj treść, a potem wykonaj test importu.");
+      setNotice("Baza została zaszyfrowana. Pobierz plik albo zapisz go jako plik roboczy, a potem wykonaj test importu.");
       return nextEncryptedText;
     } catch (error) {
       setNotice(error.message || "Nie udało się zaszyfrować aktualnej bazy.");
@@ -106,6 +114,46 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
     setNotice("Przeglądarka zablokowała pobranie. Użyj kopiowania zaszyfrowanej treści.");
   }
 
+  async function saveEncryptedDatabaseToSelectedFile() {
+    if (!fileSystemSupported) {
+      setNotice("Ta przeglądarka nie wspiera zapisu do wybranego pliku. Użyj Chrome albo Edge, albo zwykłego pobrania pliku.");
+      return;
+    }
+
+    const text = encryptedText || (await buildEncryptedDatabase());
+    if (!text) return;
+
+    setBusy(true);
+    try {
+      const result = await saveEncryptedDatabaseFile({
+        suggestedName: encryptedDatabaseFileName(fileName),
+        text,
+      });
+
+      if (result?.reason === "cancelled") {
+        setNotice("Wybór pliku został anulowany. Dane nie zostały zapisane do pliku roboczego.");
+        return;
+      }
+
+      if (result?.reason === "unsupported") {
+        setNotice("Ta przeglądarka nie obsługuje File System Access API. Użyj zwykłego pobrania albo Chrome/Edge.");
+        return;
+      }
+
+      if (result?.ok) {
+        setLastFileSaveName(result.fileName || "wybrany plik");
+        setNotice(`Zapisano zaszyfrowaną bazę do wybranego pliku: ${result.fileName || "wybrany plik"}. To jest plik roboczy do kolejnego etapu.`);
+        return;
+      }
+
+      setNotice("Nie udało się zapisać zaszyfrowanej bazy do wybranego pliku.");
+    } catch (error) {
+      setNotice(error.message || "Nie udało się zapisać zaszyfrowanej bazy do wybranego pliku.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function copyEncryptedDatabase() {
     const text = encryptedText || (await buildEncryptedDatabase());
     if (!text) return;
@@ -122,7 +170,7 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
 
   function clearBrowserCopy() {
     const confirmed = window.confirm(
-      "Najpierw upewnij się, że masz pobraną zaszyfrowaną bazę i że import testowy działa. Usunąć starą kopię z pamięci przeglądarki i zatrzymać zapis do localStorage w tej sesji?"
+      "Najpierw upewnij się, że masz pobraną albo zapisaną zaszyfrowaną bazę i że import testowy działa. Usunąć starą kopię z pamięci przeglądarki i zatrzymać zapis do localStorage w tej sesji?"
     );
     if (!confirmed) return;
 
@@ -167,7 +215,7 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
                 </div>
                 <h2 className="text-2xl font-black">Zaszyfruj istniejącą bazę</h2>
                 <p className={cx("mt-1 text-sm leading-6", t.textMuted)}>
-                  Ten panel służy do migracji danych stworzonych przed etapem szyfrowania. Najpierw pobierz zaszyfrowaną bazę, potem sprawdź import, a dopiero na końcu czyść starą kopię z przeglądarki.
+                  Ten panel służy do migracji danych stworzonych przed etapem szyfrowania. Najpierw zapisz zaszyfrowaną bazę, potem sprawdź import, a dopiero na końcu czyść starą kopię z przeglądarki.
                 </p>
               </div>
               <button type="button" onClick={onClose} className={cx("rounded-2xl p-2 transition", t.hoverSoft, t.textMuted)}>
@@ -194,7 +242,7 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-3">
                 <div className={cx("rounded-2xl border p-3 text-xs leading-5", t.buttonSoft)}>
                   <p className="font-black">Kopia w localStorage</p>
                   <p className={cx("mt-1", t.textMuted)}>
@@ -205,6 +253,12 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
                   <p className="font-black">Zapis do localStorage w tej sesji</p>
                   <p className={cx("mt-1", t.textMuted)}>
                     {browserPersistenceDisabled ? "Zatrzymany po czyszczeniu." : "Aktywny do czasu pełnego przepięcia zapisu na plik."}
+                  </p>
+                </div>
+                <div className={cx("rounded-2xl border p-3 text-xs leading-5", t.buttonSoft)}>
+                  <p className="font-black">Tryb plikowy</p>
+                  <p className={cx("mt-1", t.textMuted)}>
+                    {fileSystemSupported ? "Dostępny w tej przeglądarce." : "Niedostępny — użyj Chrome/Edge albo pobrania pliku."}
                   </p>
                 </div>
               </div>
@@ -232,6 +286,7 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
                     onChange={(event) => {
                       setPassword(event.target.value);
                       setEncryptedText("");
+                      setLastFileSaveName("");
                     }}
                     className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
                     placeholder="Minimum 8 znaków"
@@ -245,6 +300,7 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
                     onChange={(event) => {
                       setPasswordRepeat(event.target.value);
                       setEncryptedText("");
+                      setLastFileSaveName("");
                     }}
                     className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
                     placeholder="To samo hasło"
@@ -255,11 +311,19 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={downloadEncryptedDatabase}
-                  disabled={busy}
+                  onClick={saveEncryptedDatabaseToSelectedFile}
+                  disabled={busy || !fileSystemSupported}
                   className={cx("inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.actionPrimary)}
                 >
-                  <Download size={15} /> {busy ? "Szyfruję..." : "Zaszyfruj i pobierz"}
+                  <HardDrive size={15} /> {busy ? "Szyfruję..." : "Zaszyfruj i zapisz do wybranego pliku"}
+                </button>
+                <button
+                  type="button"
+                  onClick={downloadEncryptedDatabase}
+                  disabled={busy}
+                  className={cx("inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.buttonSoft)}
+                >
+                  <Download size={15} /> Zaszyfruj i pobierz
                 </button>
                 <button
                   type="button"
@@ -270,6 +334,12 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
                   {copied ? <CheckCircle2 size={15} /> : <ShieldCheck size={15} />} {copied ? "Skopiowano" : "Kopiuj zaszyfrowaną treść"}
                 </button>
               </div>
+
+              {lastFileSaveName && (
+                <p className={cx("mt-3 rounded-2xl border px-3 py-2 text-xs font-bold", t.successButton)}>
+                  Plik roboczy zapisany: {lastFileSaveName}
+                </p>
+              )}
 
               {encryptedText && (
                 <textarea
@@ -282,15 +352,32 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
               )}
             </section>
 
+            <section className={cx("mb-4 rounded-3xl border p-4", t.cardSolid)}>
+              <div className="mb-3 flex items-center gap-3">
+                <span className={cx("flex h-10 w-10 items-center justify-center rounded-2xl ring-1", t.chip)}>
+                  <HardDrive size={18} />
+                </span>
+                <div>
+                  <h3 className="text-sm font-black">3. Plik roboczy — etap przejściowy</h3>
+                  <p className={cx("text-xs font-semibold", t.textSoft)}>
+                    Ten etap tworzy zaszyfrowany plik w wybranym miejscu. Automatyczny zapis każdej zmiany do tego samego pliku będzie następnym krokiem.
+                  </p>
+                </div>
+              </div>
+              <p className={cx("rounded-2xl border px-3 py-2 text-xs font-semibold leading-5", t.buttonSoft)}>
+                Po zapisaniu pliku roboczego przetestuj import tym samym hasłem. Dopiero potem usuń starą kopię z przeglądarki. Dzięki temu dane nie zostaną uwięzione w jednym miejscu jak goblin w szufladzie.
+              </p>
+            </section>
+
             <section className={cx("rounded-3xl border p-4", t.cardSolid)}>
               <div className="mb-3 flex items-center gap-3">
                 <span className={cx("flex h-10 w-10 items-center justify-center rounded-2xl ring-1", t.chip)}>
                   <Trash2 size={18} />
                 </span>
                 <div>
-                  <h3 className="text-sm font-black">3. Wyczyść starą kopię z przeglądarki</h3>
+                  <h3 className="text-sm font-black">4. Wyczyść starą kopię z przeglądarki</h3>
                   <p className={cx("text-xs font-semibold", t.textSoft)}>
-                    Użyj dopiero po pobraniu zaszyfrowanego pliku i pozytywnym teście importu.
+                    Użyj dopiero po zapisaniu zaszyfrowanego pliku i pozytywnym teście importu.
                   </p>
                 </div>
               </div>
@@ -304,7 +391,7 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
               </button>
 
               <p className={cx("mt-3 text-xs font-semibold leading-5", t.textMuted)}>
-                Ważne: to jest etap migracyjny. Pełne docelowe rozwiązanie to zapis zaszyfrowanej bazy do wybranego pliku/folderu zamiast automatycznego localStorage.
+                Ważne: to nadal jest etap migracyjny. Pełne docelowe rozwiązanie to odblokowana sesja bazy i zapis zmian do wskazanego zaszyfrowanego pliku zamiast automatycznego localStorage.
               </p>
             </section>
           </motion.div>
