@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Activity, Archive, BookOpen, CheckSquare2, ChevronRight, Clock3, GripVertical, Image as ImageIcon, LayoutDashboard, Plus, Sparkles, Upload, X } from "lucide-react";
+import { Activity, Archive, BookOpen, CheckSquare2, ChevronRight, Clock3, GripVertical, HardDrive, Image as ImageIcon, LayoutDashboard, Plus, ShieldCheck, Sparkles, Upload, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { DashboardTitle } from "./shell.jsx";
@@ -9,13 +9,32 @@ export function HelpGuide({ t, onGoToInfo, onGoToTasks, onNewTask, onOpenTimelin
   const [selectedTopic, setSelectedTopic] = useState(null);
 
   const quickFlow = [
-    { icon: <LayoutDashboard size={32} />, step: "01", title: "Sprawdź status projektu", hint: "Pulpit pokazuje postęp, terminy i najbliższe zadania.", gradient: "from-violet-400 to-fuchsia-500" },
-    { icon: <Plus size={32} />, step: "02", title: "Dodaj kartę", hint: "Utwórz szybki task albo pełną kartę z opisem i zdjęciem.", gradient: "from-sky-400 to-cyan-500" },
-    { icon: <GripVertical size={32} />, step: "03", title: "Przesuwaj pracę", hint: "Zmieniaj etap zadania przez przeciąganie kart między kolumnami.", gradient: "from-emerald-400 to-teal-500" },
-    { icon: <Archive size={32} />, step: "04", title: "Porządkuj", hint: "Gotowe sprawy przenieś do archiwum zamiast od razu usuwać.", gradient: "from-amber-400 to-orange-500" },
+    { icon: <HardDrive size={32} />, step: "01", title: "Otwórz bazę", hint: "Na starcie wybierz istniejący plik albo utwórz nową zaszyfrowaną bazę.", gradient: "from-emerald-400 to-teal-500" },
+    { icon: <Plus size={32} />, step: "02", title: "Dodaj kartę", hint: "Utwórz szybki task albo pełną kartę z opisem, terminem i zdjęciem.", gradient: "from-sky-400 to-cyan-500" },
+    { icon: <GripVertical size={32} />, step: "03", title: "Pracuj na tablicy", hint: "Przesuwaj karty, ustawiaj terminy i korzystaj z filtrów zadań.", gradient: "from-violet-400 to-fuchsia-500" },
+    { icon: <ShieldCheck size={32} />, step: "04", title: "Zablokuj po pracy", hint: "Panel Baza pozwala zamknąć sesję i usunąć hasło z pamięci strony.", gradient: "from-amber-400 to-orange-500" },
   ];
 
   const topics = [
+    {
+      id: "security",
+      icon: <ShieldCheck size={26} />,
+      title: "Bezpieczna baza",
+      hint: "Plik, hasło, autosave i blokada",
+      accent: "from-emerald-400 to-teal-500",
+      details: {
+        title: "Bezpieczna baza - praca na zaszyfrowanym pliku",
+        intro: "Aplikacja może pracować na zaszyfrowanym pliku bazy. Dzięki temu dane nie muszą być przechowywane jako zwykła, czytelna kopia w przeglądarce. Hasło służy tylko do otwarcia pliku i nie jest zapisywane w aplikacji.",
+        points: [
+          "Po uruchomieniu aplikacji pojawia się ekran wyboru bazy: możesz otworzyć istniejący plik, utworzyć nową bazę albo zaimportować starą kopię JSON.",
+          "Po otwarciu zaszyfrowanego pliku aplikacja zatrzymuje zapis do localStorage w tej sesji i zapisuje zmiany do wybranego pliku roboczego.",
+          "Automatyczny zapis działa w tle po zmianach na tablicy. Gdy zapis się wykona, przycisk Baza krótko miga na zielono.",
+          "Przycisk Baza w prawym dolnym rogu otwiera panel stanu bazy: widać tam aktywny plik, status zapisu, opcje eksportu, importu i blokady.",
+          "Opcja Zablokuj otwartą bazę zamyka sesję plikową, usuwa hasło z pamięci strony, czyści starą kopię przeglądarkową i przeładowuje widok.",
+        ],
+        tip: "Najbezpieczniejszy rytm pracy to: otwórz zaszyfrowany plik na starcie, pracuj normalnie, poczekaj na zapis, a po zakończeniu użyj Baza → Zablokuj otwartą bazę.",
+      },
+    },
     {
       id: "dashboard",
       icon: <LayoutDashboard size={26} />,
@@ -112,19 +131,20 @@ export function HelpGuide({ t, onGoToInfo, onGoToTasks, onNewTask, onOpenTimelin
     {
       id: "backup",
       icon: <Upload size={26} />,
-      title: "Kopia zapasowa",
-      hint: "Eksport i import danych tablicy",
+      title: "Eksport i import",
+      hint: "Kopie zapasowe i migracja danych",
       accent: "from-violet-400 to-indigo-500",
       details: {
-        title: "Kopia zapasowa - zapis i odtwarzanie tablicy",
-        intro: "Z górnego paska możesz wykonać eksport oraz import danych tablicy. Kopia zapasowa zapisuje stan aplikacji do pliku JSON albo do tekstu, który można ręcznie skopiować i wkleić.",
+        title: "Eksport i import - kopie oraz odtwarzanie tablicy",
+        intro: "Eksport tworzy zabezpieczony plik kopii zapasowej, a import pozwala wczytać wcześniej zapisaną bazę. Stare pliki JSON mogą być użyte do migracji, ale bieżące kopie powinny być zapisywane jako pliki szyfrowane.",
         points: [
-          "Eksport obejmuje zadania, archiwum, zdjęcia, układ kafelków, aktywny widok, tryb kolorystyczny i wielkość tekstu.",
-          "Import zastępuje aktualne dane zapisane w tej przeglądarce.",
-          "Jeśli przeglądarka zablokuje pobieranie pliku, można skopiować treść eksportu i zapisać ją ręcznie jako plik .json.",
-          "Import działa zarówno z pliku JSON, jak i z wklejonej treści eksportu.",
+          "Eksport kopii tworzy zaszyfrowany plik zabezpieczony hasłem.",
+          "Import rozpoznaje zarówno zaszyfrowany plik bazy, jak i starszą kopię JSON.",
+          "Przy zaszyfrowanym pliku trzeba podać hasło, zanim aplikacja pokaże podgląd i odblokuje wczytanie.",
+          "Wczytanie importu zastępuje aktualną zawartość tablicy, dlatego warto upewnić się, że wybrany plik jest właściwy.",
+          "Po imporcie starego JSON najlepiej od razu zapisać dane jako nową zaszyfrowaną bazę plikową.",
         ],
-        tip: "Przed większymi zmianami zrób eksport. To najszybsza polisa ubezpieczeniowa dla tablicy.",
+        tip: "Do codziennej pracy używaj zaszyfrowanego pliku bazy. Eksport traktuj jako dodatkową kopię przed większymi zmianami albo przeniesieniem danych.",
       },
     },
     {
@@ -167,7 +187,7 @@ export function HelpGuide({ t, onGoToInfo, onGoToTasks, onNewTask, onOpenTimelin
             </div>
             <h2 className="text-2xl font-black">Szybki przewodnik po aplikacji</h2>
             <p className={cx("mt-1 max-w-2xl text-sm leading-6", t.textMuted)}>
-              Najważniejsze działania są pokazane skrótowo. Szczegółowy opis znajdziesz po kliknięciu wybranej kafelki - uwzględnia też filtry zadań, archiwum oraz kopie zapasowe.
+              Najważniejsze działania są pokazane skrótowo. Szczegółowy opis znajdziesz po kliknięciu wybranej kafelki - uwzględnia też bezpieczną bazę, autosave, import, eksport, filtry zadań i archiwum.
             </p>
           </div>
 
