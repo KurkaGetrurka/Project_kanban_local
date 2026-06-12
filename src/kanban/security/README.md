@@ -31,10 +31,12 @@ Używany schemat:
 - moduł `browserStoragePolicy.js` do wykrywania i czyszczenia starej kopii z `localStorage`,
 - komponent `SecurityDatabaseModal` z procesem migracji: zaszyfruj aktualny stan, przetestuj import, usuń starą kopię z przeglądarki,
 - pływający przycisk `Baza`, który otwiera panel migracji bez ingerowania w główny układ aplikacji,
+- ekran startowy `StartupDatabaseGate`, który prowadzi użytkownika przez utworzenie nowej zaszyfrowanej bazy, otwarcie istniejącej bazy albo import starej kopii JSON,
 - startowa instalacja blokady zapisu do `localStorage` dla znanych kluczy Kanbana,
 - moduł `fileDatabaseStorage.js` z pomocnikami File System Access API,
 - jawna akcja `Zaszyfruj i zapisz do wybranego pliku`, która tworzy zaszyfrowany plik roboczy w miejscu wskazanym przez użytkownika,
 - sesja plikowa: `Otwórz zaszyfrowaną bazę`, odblokowanie hasłem i zapis późniejszych zmian do tego samego zaszyfrowanego pliku,
+- tworzenie nowej aktywnej sesji plikowej przez `createEncryptedDatabaseSession()`, używane na ekranie startowym,
 - moduł `liveBoardSnapshot.js`, który trzyma w pamięci strony ostatnio odblokowany albo zapisany stan sesji plikowej dla panelu `Baza`,
 - pływający status bazy pokazujący tryb przeglądarkowy, aktywną sesję plikową, ostatni zapis albo błąd zapisu,
 - akcja `Zablokuj otwartą bazę` dostępna z panelu `Baza`, która zamyka sesję plikową, czyści starą kopię przeglądarkową i przeładowuje widok.
@@ -47,12 +49,22 @@ Strażnik jest instalowany już w `src/main.jsx`, zanim aplikacja zostanie wyren
 
 `useKanbanBoard.jsx` dodatkowo sprawdza `shouldPersistToBrowserStorage()`. Gdy aktywna jest sesja plikowa, zapis do `localStorage` nie jest używany — zamiast tego stan tablicy jest szyfrowany i zapisywany do aktywnego pliku.
 
+## Ekran startowy
+
+`StartupDatabaseGate` pojawia się przy starcie aplikacji jako pełnoekranowy wybór bazy. Ma trzy główne ścieżki:
+
+1. `Utwórz nową bazę` — tworzy pusty zaszyfrowany plik i od razu otwiera go jako aktywną sesję plikową.
+2. `Otwórz bazę` — pyta o hasło i otwiera istniejący zaszyfrowany plik przez File System Access API.
+3. `Importuj kopię` — pozwala wczytać starszy zwykły eksport JSON, głównie jako ścieżkę migracyjną.
+
+Przycisk `Baza` w rogu nadal istnieje, ale jest narzędziem do późniejszych operacji administracyjnych, a nie pierwszym krokiem użytkownika.
+
 ## Etap sesji plikowej
 
 Przepływ docelowy w tym etapie:
 
-1. Użytkownik tworzy zaszyfrowany plik przez `Zaszyfruj i zapisz do wybranego pliku` albo posiada już taki plik.
-2. Użytkownik klika `Otwórz zaszyfrowaną bazę`.
+1. Użytkownik tworzy zaszyfrowany plik przez ekran startowy albo posiada już taki plik.
+2. Użytkownik klika `Otwórz zaszyfrowaną bazę` albo wybiera ją na ekranie startowym.
 3. Aplikacja pyta o hasło i otwiera plik przez File System Access API.
 4. Hasło i uchwyt do pliku są trzymane tylko w pamięci aktywnej strony.
 5. Odszyfrowana baza jest przekazywana do głównej tablicy przez zdarzenie `kanban-file-database-opened`.
@@ -75,6 +87,6 @@ Status reaguje na zdarzenia `kanban-file-database-opened`, `kanban-file-database
 
 ## Do zrobienia w kolejnych etapach
 
-1. Dodać ekran startowy: `Otwórz bazę`, `Utwórz bazę`, `Zaszyfruj istniejącą bazę`.
-2. Rozważyć trzymanie wyprowadzonego klucza w pamięci sesji zamiast wykonywania PBKDF2 przy każdym autosave, jeżeli zapis będzie odczuwalnie wolny.
-3. Dodać bardziej widoczny proces zmiany hasła bazy.
+1. Rozważyć trzymanie wyprowadzonego klucza w pamięci sesji zamiast wykonywania PBKDF2 przy każdym autosave, jeżeli zapis będzie odczuwalnie wolny.
+2. Dodać bardziej widoczny proces zmiany hasła bazy.
+3. Doprecyzować politykę dla przycisku `Pomiń testowo`, jeśli aplikacja ma być wdrożona wyłącznie w trybie plikowym.
