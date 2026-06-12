@@ -405,5 +405,92 @@ export function buildMonthDays(monthDate) {
   });
 }
 export function taskTitlesForTooltip(tasks) {
-  return tasks.map((task) => task.title).join("\n");
+  return Array.isArray(tasks) ? tasks.map((task) => task.title).join("\n") : "";
+}
+
+// Backup helpers
+export function buildBackupPayload(state = defaultBoardState) {
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    columns: Array.isArray(state.columns) ? state.columns : defaultColumns,
+    tasks: Array.isArray(state.tasks) ? state.tasks : [],
+    darkMode: Boolean(state.darkMode),
+    fontScale: clampFontScale(state.fontScale),
+    dashboardOrder: normalizeDashboardOrder(state.dashboardOrder),
+    dashboardSizes: normalizeDashboardSizes(state.dashboardSizes || {}),
+    activeSection: normalizeActiveSection(state.activeSection),
+  };
+}
+
+export function normalizeBackupPayload(payload = {}) {
+  const source = payload && typeof payload === "object" ? payload : {};
+  return {
+    ...defaultBoardState,
+    ...source,
+    columns: Array.isArray(source.columns) && source.columns.length ? source.columns : defaultColumns,
+    tasks: Array.isArray(source.tasks) ? source.tasks : [],
+    darkMode: typeof source.darkMode === "boolean" ? source.darkMode : defaultBoardState.darkMode,
+    fontScale: clampFontScale(source.fontScale),
+    dashboardOrder: normalizeDashboardOrder(source.dashboardOrder),
+    dashboardSizes: normalizeDashboardSizes(source.dashboardSizes || {}),
+    activeSection: normalizeActiveSection(source.activeSection),
+  };
+}
+
+export function parseBackupText(text) {
+  const raw = String(text || "").trim();
+  if (!raw) throw new Error("Plik kopii jest pusty.");
+  const parsed = JSON.parse(raw);
+  if (!parsed || typeof parsed !== "object") throw new Error("Nieprawidłowy format kopii.");
+  return normalizeBackupPayload(parsed);
+}
+
+export function readTextFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error || new Error("Nie udało się odczytać pliku."));
+    reader.readAsText(file);
+  });
+}
+
+export async function downloadTextFile(fileName, text) {
+  if (typeof window === "undefined" || typeof document === "undefined") return { ok: false, reason: "unsupported" };
+
+  try {
+    if (typeof window.showSaveFilePicker === "function") {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: fileName,
+        types: [
+          {
+            description: "Kanban JSON",
+            accept: { "application/json": [".json", ".kanban.json"] },
+          },
+        ],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(text);
+      await writable.close();
+      return { ok: true, fileName: handle.name || fileName };
+    }
+  } catch (error) {
+    if (error?.name === "AbortError") return { ok: false, reason: "cancelled" };
+    return { ok: false, reason: "error", error };
+  }
+
+  try {
+    const blob = new Blob([text], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return { ok: true, fileName };
+  } catch (error) {
+    return { ok: false, reason: "error", error };
+  }
 }
