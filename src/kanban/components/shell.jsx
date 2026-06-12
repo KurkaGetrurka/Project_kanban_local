@@ -26,7 +26,12 @@ import {
   X,
 } from "lucide-react";
 
-import { cx, dashboardSizeLabels, dashboardSizeOptions, dashboardSpanClass } from "../shared.jsx";
+import {
+  cx,
+  dashboardSizeLabels,
+  dashboardSizeOptions,
+  dashboardSpanClass,
+} from "../shared.jsx";
 
 export function FontScaleStyles() {
   return <style>{String.raw`
@@ -110,10 +115,26 @@ export function TopToolbar({
   onImportBackup,
 }) {
   const viewButtons = [
-    { id: "info", label: "Pulpit", icon: <LayoutDashboard size={15} />, action: onShowInfo },
-    { id: "tasks", label: "Zadania", icon: <CheckSquare2 size={15} />, action: onShowTasks },
-    { id: "help", label: "Instrukcja", icon: <BookOpen size={15} />, action: onShowHelp },
+    {
+      id: "info",
+      label: "Pulpit",
+      icon: <LayoutDashboard size={15} />,
+      action: onShowInfo,
+    },
+    {
+      id: "tasks",
+      label: "Zadania",
+      icon: <CheckSquare2 size={15} />,
+      action: onShowTasks,
+    },
+    {
+      id: "help",
+      label: "Instrukcja",
+      icon: <BookOpen size={15} />,
+      action: onShowHelp,
+    },
   ];
+
   const quickActions = [
     { label: "Raport", icon: <Activity size={15} />, action: onOpenPerformance },
     { label: "Eksport", icon: <Upload size={15} />, action: onExportBackup },
@@ -121,12 +142,24 @@ export function TopToolbar({
   ];
 
   return (
-    <div className={cx("sticky top-3 z-30 mb-5 overflow-hidden rounded-[1.75rem] border shadow-2xl backdrop-blur-2xl", t.card)}>
+    <div
+      className={cx(
+        "sticky top-3 z-30 mb-5 overflow-hidden rounded-[1.75rem] border shadow-2xl backdrop-blur-2xl",
+        t.card
+      )}
+    >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-300/70 to-transparent" />
+
       <div className="grid gap-3 p-2.5 lg:grid-cols-[auto_1fr_auto] lg:items-center">
-        <div className={cx("flex flex-wrap items-center gap-2 rounded-[1.25rem] border p-1.5", t.buttonSoft)}>
+        <div
+          className={cx(
+            "flex flex-wrap items-center gap-2 rounded-[1.25rem] border p-1.5",
+            t.buttonSoft
+          )}
+        >
           {viewButtons.map((item) => {
             const isActive = activeSection === item.id;
+
             return (
               <button
                 key={item.id}
@@ -167,27 +200,71 @@ export function TopToolbar({
           <button
             type="button"
             onClick={onToggleDark}
-            className={cx("inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-black shadow-sm transition hover:-translate-y-0.5", t.buttonSoft)}
+            className={cx(
+              "inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-black shadow-sm transition hover:-translate-y-0.5",
+              t.buttonSoft
+            )}
             title="Przełącz tryb jasny/ciemny"
           >
             {darkMode ? <Sun size={16} /> : <Moon size={16} />}
-            <span className="hidden sm:inline">{darkMode ? "Jasny" : "Ciemny"}</span>
+            <span className="hidden sm:inline">
+              {darkMode ? "Jasny" : "Ciemny"}
+            </span>
           </button>
 
-          <div className={cx("inline-flex items-center overflow-hidden rounded-2xl border shadow-sm", t.buttonSoft)} title="Wielkość tekstu">
-            <button type="button" onClick={onDecreaseFont} className={cx("px-3 py-2 text-xs font-black transition", t.hoverSoft)}>A−</button>
-            <button type="button" onClick={onResetFont} className={cx("border-x px-3 py-2 text-xs font-black transition", t.divider, t.hoverSoft)}>{fontScale}%</button>
-            <button type="button" onClick={onIncreaseFont} className={cx("px-3 py-2 text-xs font-black transition", t.hoverSoft)}>A+</button>
+          <div
+            className={cx(
+              "inline-flex items-center overflow-hidden rounded-2xl border shadow-sm",
+              t.buttonSoft
+            )}
+            title="Wielkość tekstu"
+          >
+            <button
+              type="button"
+              onClick={onDecreaseFont}
+              className={cx("px-3 py-2 text-xs font-black transition", t.hoverSoft)}
+            >
+              A−
+            </button>
+
+            <button
+              type="button"
+              onClick={onResetFont}
+              className={cx(
+                "border-x px-3 py-2 text-xs font-black transition",
+                t.divider,
+                t.hoverSoft
+              )}
+            >
+              {fontScale}%
+            </button>
+
+            <button
+              type="button"
+              onClick={onIncreaseFont}
+              className={cx("px-3 py-2 text-xs font-black transition", t.hoverSoft)}
+            >
+              A+
+            </button>
           </div>
 
           <button
             type="button"
             onClick={onToggleLayout}
-            className={cx("inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-black shadow-sm transition hover:-translate-y-0.5", isLayoutEditing ? t.actionPrimary : t.buttonSoft)}
-            title={isLayoutEditing ? "Zakończ zmianę układu" : "Edytuj układ kafelków dashboardu"}
+            className={cx(
+              "inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-black shadow-sm transition hover:-translate-y-0.5",
+              isLayoutEditing ? t.actionPrimary : t.buttonSoft
+            )}
+            title={
+              isLayoutEditing
+                ? "Zakończ zmianę układu"
+                : "Edytuj układ kafelków dashboardu"
+            }
           >
             <GripVertical size={16} />
-            <span className="hidden xl:inline">{isLayoutEditing ? "Zakończ edycję" : "Układ"}</span>
+            <span className="hidden xl:inline">
+              {isLayoutEditing ? "Zakończ edycję" : "Układ"}
+            </span>
           </button>
         </div>
       </div>
@@ -200,12 +277,42 @@ export function TopToolbar({
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className={cx("mx-2.5 mb-2.5 rounded-[1.25rem] border p-2", t.buttonSoft)}>
+            <div
+              className={cx(
+                "mx-2.5 mb-2.5 rounded-[1.25rem] border p-2",
+                t.buttonSoft
+              )}
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className={cx("px-2 text-xs font-bold", t.textMuted)}>Tryb edycji układu jest aktywny — przeciągaj kafelki na pulpicie albo zmień ich rozmiar przyciskiem na kafelce.</p>
+                <p className={cx("px-2 text-xs font-bold", t.textMuted)}>
+                  Tryb edycji układu jest aktywny — przeciągaj kafelki na
+                  pulpicie albo zmień ich rozmiar przyciskiem na kafelce.
+                </p>
+
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={onResetLayout} className={cx("inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-black transition hover:-translate-y-0.5", t.buttonSoft)}><RotateCcw size={15} /> Reset układu</button>
-                  <button type="button" onClick={onResetSizes} className={cx("inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-black transition hover:-translate-y-0.5", t.buttonSoft)}><RotateCcw size={15} /> Reset rozmiarów</button>
+                  <button
+                    type="button"
+                    onClick={onResetLayout}
+                    className={cx(
+                      "inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-black transition hover:-translate-y-0.5",
+                      t.buttonSoft
+                    )}
+                  >
+                    <RotateCcw size={15} />
+                    Reset układu
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onResetSizes}
+                    className={cx(
+                      "inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-black transition hover:-translate-y-0.5",
+                      t.buttonSoft
+                    )}
+                  >
+                    <RotateCcw size={15} />
+                    Reset rozmiarów
+                  </button>
                 </div>
               </div>
             </div>
@@ -216,53 +323,276 @@ export function TopToolbar({
   );
 }
 
-export function DashboardSlot({ t, widgetId, label, size, isEditing, draggedWidgetId, dropTarget, onPointerDragStart, onSizeChange, children }) {
+export function DashboardSlot({
+  t,
+  widgetId,
+  label,
+  size,
+  isEditing,
+  draggedWidgetId,
+  dropTarget,
+  onPointerDragStart,
+  onSizeChange,
+  children,
+}) {
   const isDragged = draggedWidgetId === widgetId;
-  const showBeforeLine = isEditing && !isDragged && dropTarget?.id === widgetId && dropTarget?.placement === "before";
-  const showAfterLine = isEditing && !isDragged && dropTarget?.id === widgetId && dropTarget?.placement === "after";
+  const showBeforeLine =
+    isEditing &&
+    !isDragged &&
+    dropTarget?.id === widgetId &&
+    dropTarget?.placement === "before";
+  const showAfterLine =
+    isEditing &&
+    !isDragged &&
+    dropTarget?.id === widgetId &&
+    dropTarget?.placement === "after";
+
   return (
-    <motion.div layout data-dashboard-widget-id={widgetId} data-dashboard-widget-size={size} onPointerDown={isEditing ? onPointerDragStart : undefined} initial={false} animate={{ scale: isDragged ? 0.985 : 1, opacity: isDragged ? 0.58 : 1 }} transition={{ layout: { type: "spring", stiffness: 260, damping: 36, mass: 0.7 } }} className={cx("relative h-full", dashboardSpanClass(size), isEditing && "cursor-grab active:cursor-grabbing touch-none select-none")}>
-      <AnimatePresence>{(showBeforeLine || showAfterLine) && <motion.div key={showBeforeLine ? "before" : "after"} initial={{ opacity: 0, scaleY: 0.65 }} animate={{ opacity: 1, scaleY: 1 }} exit={{ opacity: 0, scaleY: 0.65 }} className={cx("absolute bottom-4 top-4 z-30 w-1 rounded-full bg-violet-400 shadow-[0_0_16px_rgba(168,85,247,.85)]", showBeforeLine ? "-left-2" : "-right-2")} />}</AnimatePresence>
-      {isEditing && <><motion.div data-dashboard-drag-handle onPointerDown={onPointerDragStart} className={cx("absolute right-3 top-3 z-20 inline-flex cursor-grab items-center gap-1 rounded-full px-2 py-1 text-[10px] font-black shadow-lg", t.actionPrimary)}><GripVertical size={12} /> {label}</motion.div><motion.div onPointerDown={(event) => event.stopPropagation()} className={cx("absolute bottom-3 right-3 z-20 inline-flex items-center overflow-hidden rounded-full border text-[10px] font-black shadow-lg backdrop-blur", t.buttonSoft)}><button type="button" onClick={(event) => { event.stopPropagation(); onSizeChange("decrease"); }} disabled={dashboardSizeOptions.indexOf(size) === 0} className={cx("px-2 py-1 transition disabled:opacity-35", t.hoverSoft)}>−</button><span className={cx("border-x px-2 py-1", t.divider)}>{dashboardSizeLabels[size] || "Normalny"}</span><button type="button" onClick={(event) => { event.stopPropagation(); onSizeChange("increase"); }} disabled={dashboardSizeOptions.indexOf(size) === dashboardSizeOptions.length - 1} className={cx("px-2 py-1 transition disabled:opacity-35", t.hoverSoft)}>+</button></motion.div></>}
-      <motion.div layout className={cx("h-full transition-shadow duration-200", isEditing && "rounded-[1.9rem] ring-2 ring-violet-400/50 ring-offset-2", isEditing && t.ringOffset)}>{children}</motion.div>
+    <motion.div
+      layout
+      data-dashboard-widget-id={widgetId}
+      data-dashboard-widget-size={size}
+      onPointerDown={isEditing ? onPointerDragStart : undefined}
+      initial={false}
+      animate={{
+        scale: isDragged ? 0.985 : 1,
+        opacity: isDragged ? 0.58 : 1,
+      }}
+      transition={{
+        layout: {
+          type: "spring",
+          stiffness: 260,
+          damping: 36,
+          mass: 0.7,
+        },
+      }}
+      className={cx(
+        "relative h-full",
+        dashboardSpanClass(size),
+        isEditing &&
+          "cursor-grab active:cursor-grabbing touch-none select-none"
+      )}
+    >
+      <AnimatePresence>
+        {(showBeforeLine || showAfterLine) && (
+          <motion.div
+            key={showBeforeLine ? "before" : "after"}
+            initial={{ opacity: 0, scaleY: 0.65 }}
+            animate={{ opacity: 1, scaleY: 1 }}
+            exit={{ opacity: 0, scaleY: 0.65 }}
+            className={cx(
+              "absolute bottom-4 top-4 z-30 w-1 rounded-full bg-violet-400 shadow-[0_0_16px_rgba(168,85,247,.85)]",
+              showBeforeLine ? "-left-2" : "-right-2"
+            )}
+          />
+        )}
+      </AnimatePresence>
+
+      {isEditing && (
+        <>
+          <motion.div
+            data-dashboard-drag-handle
+            onPointerDown={onPointerDragStart}
+            className={cx(
+              "absolute right-3 top-3 z-20 inline-flex cursor-grab items-center gap-1 rounded-full px-2 py-1 text-[10px] font-black shadow-lg",
+              t.actionPrimary
+            )}
+          >
+            <GripVertical size={12} />
+            {label}
+          </motion.div>
+
+          <motion.div
+            onPointerDown={(event) => event.stopPropagation()}
+            className={cx(
+              "absolute bottom-3 right-3 z-20 inline-flex items-center overflow-hidden rounded-full border text-[10px] font-black shadow-lg backdrop-blur",
+              t.buttonSoft
+            )}
+          >
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onSizeChange("decrease");
+              }}
+              disabled={dashboardSizeOptions.indexOf(size) === 0}
+              className={cx(
+                "px-2 py-1 transition disabled:opacity-35",
+                t.hoverSoft
+              )}
+            >
+              −
+            </button>
+
+            <span className={cx("border-x px-2 py-1", t.divider)}>
+              {dashboardSizeLabels[size] || "Normalny"}
+            </span>
+
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onSizeChange("increase");
+              }}
+              disabled={
+                dashboardSizeOptions.indexOf(size) ===
+                dashboardSizeOptions.length - 1
+              }
+              className={cx(
+                "px-2 py-1 transition disabled:opacity-35",
+                t.hoverSoft
+              )}
+            >
+              +
+            </button>
+          </motion.div>
+        </>
+      )}
+
+      <motion.div
+        layout
+        className={cx(
+          "h-full transition-shadow duration-200",
+          isEditing &&
+            "rounded-[1.9rem] ring-2 ring-violet-400/50 ring-offset-2",
+          isEditing && t.ringOffset
+        )}
+      >
+        {children}
+      </motion.div>
     </motion.div>
   );
 }
 
 export function DashboardCard({ t, children, className = "" }) {
-  return <section className={cx("flex h-full min-h-[280px] flex-col rounded-[1.75rem] border p-4 shadow-xl backdrop-blur-xl", t.card, className)}>{children}</section>;
+  return (
+    <section
+      className={cx(
+        "flex h-full min-h-[280px] flex-col rounded-[1.75rem] border p-4 shadow-xl backdrop-blur-xl",
+        t.card,
+        className
+      )}
+    >
+      {children}
+    </section>
+  );
 }
 
 export function DashboardTitle({ t, icon, eyebrow, title, badge }) {
-  return <div className="mb-4 flex items-start justify-between gap-3"><div><div className={cx("mb-1 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-black ring-1", t.chip)}>{icon} {eyebrow}</div><h2 className="text-base font-black leading-tight capitalize">{title}</h2></div>{badge !== undefined && <span className={cx("inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full px-2 text-[10px] font-black leading-none", t.buttonPrimary)}>{badge}</span>}</div>;
+  return (
+    <div className="mb-4 flex items-start justify-between gap-3">
+      <div>
+        <div
+          className={cx(
+            "mb-1 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-black ring-1",
+            t.chip
+          )}
+        >
+          {icon}
+          {eyebrow}
+        </div>
+
+        <h2 className="text-base font-black leading-tight capitalize">
+          {title}
+        </h2>
+      </div>
+
+      {badge !== undefined && (
+        <span
+          className={cx(
+            "inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-full px-2 text-[10px] font-black leading-none",
+            t.buttonPrimary
+          )}
+        >
+          {badge}
+        </span>
+      )}
+    </div>
+  );
 }
 
 export function SectionTabs({ activeSection, onChange }) {
   const tabs = [
-    { id: "info", icon: <LayoutDashboard size={23} />, title: "Pulpit", tone: "violet" },
-    { id: "tasks", icon: <CheckSquare2 size={23} />, title: "Zadania", tone: "emerald" },
-    { id: "help", icon: <BookOpen size={23} />, title: "Instrukcja", tone: "sky" },
+    {
+      id: "info",
+      icon: <LayoutDashboard size={23} />,
+      title: "Pulpit",
+      tone: "violet",
+    },
+    {
+      id: "tasks",
+      icon: <CheckSquare2 size={23} />,
+      title: "Zadania",
+      tone: "emerald",
+    },
+    {
+      id: "help",
+      icon: <BookOpen size={23} />,
+      title: "Instrukcja",
+      tone: "sky",
+    },
+    {
+      id: "urlop",
+      icon: <CalendarDays size={23} />,
+      title: "Urlop",
+      tone: "amber",
+    },
   ];
+
   const toneClass = {
-    violet: { active: "bg-violet-500 text-white shadow-xl shadow-violet-500/25 ring-4 ring-violet-300/35", idle: "bg-transparent text-violet-400 ring-1 ring-violet-400/30 hover:bg-violet-500/10", line: "from-violet-400/35" },
-    sky: { active: "bg-sky-500 text-white shadow-xl shadow-sky-500/25 ring-4 ring-sky-300/35", idle: "bg-transparent text-sky-400 ring-1 ring-sky-400/30 hover:bg-sky-500/10", line: "via-sky-400/45" },
-    emerald: { active: "bg-emerald-500 text-white shadow-xl shadow-emerald-500/25 ring-4 ring-emerald-300/35", idle: "bg-transparent text-emerald-400 ring-1 ring-emerald-400/30 hover:bg-emerald-500/10", line: "to-emerald-400/35" },
+    violet: {
+      active:
+        "bg-violet-500 text-white shadow-xl shadow-violet-500/25 ring-4 ring-violet-300/35",
+      idle:
+        "bg-transparent text-violet-400 ring-1 ring-violet-400/30 hover:bg-violet-500/10",
+    },
+    emerald: {
+      active:
+        "bg-emerald-500 text-white shadow-xl shadow-emerald-500/25 ring-4 ring-emerald-300/35",
+      idle:
+        "bg-transparent text-emerald-400 ring-1 ring-emerald-400/30 hover:bg-emerald-500/10",
+    },
+    sky: {
+      active:
+        "bg-sky-500 text-white shadow-xl shadow-sky-500/25 ring-4 ring-sky-300/35",
+      idle:
+        "bg-transparent text-sky-400 ring-1 ring-sky-400/30 hover:bg-sky-500/10",
+    },
+    amber: {
+      active:
+        "bg-amber-500 text-white shadow-xl shadow-amber-500/25 ring-4 ring-amber-300/35",
+      idle:
+        "bg-transparent text-amber-400 ring-1 ring-amber-400/30 hover:bg-amber-500/10",
+    },
   };
+
   return (
     <div className="mb-6 flex justify-center">
       <div className="relative flex items-center justify-center gap-6 px-4 py-2 sm:gap-8">
-        <div className="pointer-events-none absolute left-16 right-16 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-gradient-to-r from-violet-400/35 via-emerald-400/45 to-sky-400/35" />
+        <div className="pointer-events-none absolute left-16 right-16 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-gradient-to-r from-violet-400/35 via-emerald-400/45 to-amber-400/35" />
+
         {tabs.map((tab, index) => {
           const isActive = activeSection === tab.id;
+
           return (
             <React.Fragment key={tab.id}>
-              {index > 0 && <div className="relative z-10 hidden h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/10 backdrop-blur sm:flex"><ChevronRight size={16} className="text-sky-400" /></div>}
+              {index > 0 && (
+                <div className="relative z-10 hidden h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/10 backdrop-blur sm:flex">
+                  <ChevronRight size={16} className="text-sky-400" />
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={() => onChange(tab.id)}
                 aria-label={`Pokaż: ${tab.title}`}
                 title={tab.title}
-                className={cx("relative z-10 flex h-14 w-14 items-center justify-center rounded-full transition hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-violet-300/45", isActive ? toneClass[tab.tone].active : toneClass[tab.tone].idle)}
+                className={cx(
+                  "relative z-10 flex h-14 w-14 items-center justify-center rounded-full transition hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-violet-300/45",
+                  isActive
+                    ? toneClass[tab.tone].active
+                    : toneClass[tab.tone].idle
+                )}
               >
                 {tab.icon}
               </button>

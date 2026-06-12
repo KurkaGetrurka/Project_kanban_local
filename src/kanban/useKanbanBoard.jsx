@@ -13,7 +13,6 @@ import {
   defaultDashboardSizes,
   downloadTextFile,
   emptyDraft,
-  filterTaskBoardTasks,
   getTaskImages,
   hasImportableKanbanData,
   loadInitialState,
@@ -22,6 +21,7 @@ import {
   normalizeTaskPriority,
   parseBackupText,
   parseLocalDate,
+  progressOf,
   readImageAttachment,
   readTextFile,
   reorderDashboardOrder,
@@ -38,13 +38,72 @@ const createQuickTaskState = () => ({
   priority: "medium",
 });
 
-const createTaskFiltersState = () => ({
-  search: "",
-  labelQuery: "",
-  priority: "all",
-  from: "",
-  to: "",
+
+const createTaskSortState = () => ({
+  mode: "manual",
 });
+
+const priorityRank = {
+  urgent: 4,
+  high: 3,
+  medium: 2,
+  low: 1,
+};
+
+function getSortableDateValue(task) {
+  const date = parseLocalDate(task?.dueDate);
+  return date ? date.getTime() : Number.POSITIVE_INFINITY;
+}
+
+function compareText(a, b) {
+  return String(a || "").localeCompare(String(b || ""), "pl", { sensitivity: "base" });
+}
+
+function sortTaskBoardTasks(tasks, sort) {
+  const mode = sort?.mode || "manual";
+  const list = Array.isArray(tasks) ? [...tasks] : [];
+
+  if (mode === "manual") return list;
+
+  const createdAt = (task) => Number(task?.createdAt) || 0;
+  const priorityValue = (task) => priorityRank[normalizeTaskPriority(task?.priority)] || 0;
+
+  return list.sort((a, b) => {
+    if (mode === "dueAsc") {
+      return getSortableDateValue(a) - getSortableDateValue(b) || createdAt(a) - createdAt(b);
+    }
+
+    if (mode === "dueDesc") {
+      return getSortableDateValue(b) - getSortableDateValue(a) || createdAt(a) - createdAt(b);
+    }
+
+    if (mode === "priorityDesc") {
+      return priorityValue(b) - priorityValue(a) || getSortableDateValue(a) - getSortableDateValue(b);
+    }
+
+    if (mode === "priorityAsc") {
+      return priorityValue(a) - priorityValue(b) || getSortableDateValue(a) - getSortableDateValue(b);
+    }
+
+    if (mode === "titleAsc") {
+      return compareText(a?.title, b?.title) || createdAt(a) - createdAt(b);
+    }
+
+    if (mode === "titleDesc") {
+      return compareText(b?.title, a?.title) || createdAt(a) - createdAt(b);
+    }
+
+    if (mode === "progressDesc") {
+      return progressOf(b) - progressOf(a) || getSortableDateValue(a) - getSortableDateValue(b);
+    }
+
+    if (mode === "progressAsc") {
+      return progressOf(a) - progressOf(b) || getSortableDateValue(a) - getSortableDateValue(b);
+    }
+
+    return 0;
+  });
+}
 
 export function useKanbanBoard() {
   // Base state
@@ -70,7 +129,7 @@ export function useKanbanBoard() {
   const [selectedGalleryImage, setSelectedGalleryImage] = useState(null);
   const [draft, setDraft] = useState(null);
   const [quickTask, setQuickTask] = useState(createQuickTaskState);
-  const [taskFilters, setTaskFilters] = useState(createTaskFiltersState);
+  const [taskSort, setTaskSort] = useState(createTaskSortState);
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
@@ -105,7 +164,7 @@ export function useKanbanBoard() {
 
   // Derived board state
   const activeTasks = useMemo(() => tasks.filter((task) => !task.archivedAt), [tasks]);
-  const filteredActiveTasks = useMemo(() => filterTaskBoardTasks(activeTasks, taskFilters), [activeTasks, taskFilters]);
+  const sortedActiveTasks = useMemo(() => sortTaskBoardTasks(activeTasks, taskSort), [activeTasks, taskSort]);
   const archivedTasks = useMemo(() => tasks.filter((task) => task.archivedAt).sort((a, b) => (b.archivedAt || 0) - (a.archivedAt || 0)), [tasks]);
   const dueTasks = useMemo(() => activeTasks.filter((task) => task.dueDate), [activeTasks]);
   const timelineAllTasks = useMemo(() => dueTasks.slice().sort((a, b) => a.dueDate.localeCompare(b.dueDate)), [dueTasks]);
@@ -157,8 +216,8 @@ export function useKanbanBoard() {
     setSelectedGalleryImage(null);
     openTask(task);
   }
-  function clearTaskFilters() {
-    setTaskFilters(createTaskFiltersState());
+  function clearTaskSort() {
+    setTaskSort(createTaskSortState());
   }
   function closeModal() {
     setDraft(null);
@@ -202,12 +261,12 @@ export function useKanbanBoard() {
     const result = await downloadTextFile(backupFileName(), backupText);
     if (result?.reason === "cancelled") return result;
     if (!result?.ok) {
-      alert("Przegl\u0105darka zablokowa\u0142a automatyczne pobranie. Skopiuj zawarto\u015b\u0107 kopii z okna eksportu i zapisz j\u0105 r\u0119cznie jako plik .json.");
+      alert("Przeglądarka zablokowała automatyczne pobranie. Skopiuj zawartość kopii z okna eksportu i zapisz ją ręcznie jako plik .json.");
     }
     return result;
   }
   function applyImportedBackup(parsed) {
-    if (!hasImportableKanbanData(parsed)) throw new Error("Wybrany plik nie wygl\u0105da jak kopia zapasowa tej tablicy. Brakuje listy zada\u0144.");
+    if (!hasImportableKanbanData(parsed)) throw new Error("Wybrany plik nie wygląda jak kopia zapasowa tej tablicy. Brakuje listy zadań.");
     const normalized = normalizeImportedState(parsed, persistedBoardState);
     const importedCount = countImportableTasks(parsed);
     const nextState = {
@@ -236,7 +295,7 @@ export function useKanbanBoard() {
       safeStorageSetItem(STORAGE_KEY, JSON.stringify(nextState));
       window.dispatchEvent(new CustomEvent("kanban-imported", { detail: { importedCount, restoredCount: nextState.tasks.length } }));
     }
-    alert(`Kopia zapasowa zosta\u0142a wczytana. Odczytano ${importedCount} kart, przywr\u00f3cono ${nextState.tasks.length}.`);
+    alert(`Kopia zapasowa została wczytana. Odczytano ${importedCount} kart, przywrócono ${nextState.tasks.length}.`);
   }
   function requestImportBackup() {
     setImportOpen(true);
@@ -248,7 +307,7 @@ export function useKanbanBoard() {
       const parsed = parseBackupText(text);
       applyImportedBackup(parsed);
     } catch (error) {
-      alert(error.message || "Nie uda\u0142o si\u0119 wczyta\u0107 kopii zapasowej. Sprawd\u017a, czy wybrany plik jest prawid\u0142owym plikiem JSON z tej aplikacji.");
+      alert(error.message || "Nie udało się wczytać kopii zapasowej. Sprawdź, czy wybrany plik jest prawidłowym plikiem JSON z tej aplikacji.");
     }
   }
   function importBackupText(text) {
@@ -257,7 +316,7 @@ export function useKanbanBoard() {
       applyImportedBackup(parsed);
       return true;
     } catch (error) {
-      alert(error.message || "Nie uda\u0142o si\u0119 wczyta\u0107 kopii zapasowej. Sprawd\u017a tre\u015b\u0107 JSON z eksportu.");
+      alert(error.message || "Nie udało się wczytać kopii zapasowej. Sprawdź treść JSON z eksportu.");
       return false;
     }
   }
@@ -331,7 +390,7 @@ export function useKanbanBoard() {
       const images = await Promise.all(files.map(readImageAttachment));
       setDraft((current) => ({ ...current, images: [...getTaskImages(current), ...images], image: undefined }));
     } catch (error) {
-      alert(error.message || "Nie uda\u0142o si\u0119 doda\u0107 jednego ze zdj\u0119\u0107.");
+      alert(error.message || "Nie udało się dodać jednego ze zdjęć.");
     }
   }
   function removeTaskImage(imageId) {
@@ -467,10 +526,10 @@ export function useKanbanBoard() {
       draft,
       draftExists,
       quickTask,
-      taskFilters,
+      taskSort,
       calendarMonth,
       activeTasks,
-      filteredActiveTasks,
+      sortedActiveTasks,
       archivedTasks,
       dueTasks,
       timelineAllTasks,
@@ -493,7 +552,7 @@ export function useKanbanBoard() {
       setPerformanceOpen,
       setQuickTask,
       setSelectedGalleryImage,
-      setTaskFilters,
+      setTaskSort,
       setTimelineOpen,
     },
     actions: {
@@ -503,7 +562,7 @@ export function useKanbanBoard() {
       attachTaskImage,
       changeDashboardWidgetSize,
       changeSection,
-      clearTaskFilters,
+      clearTaskSort,
       closeModal,
       decreaseFont,
       deleteTask,

@@ -9,10 +9,10 @@ export function HelpGuide({ t, onGoToInfo, onGoToTasks, onNewTask, onOpenTimelin
   const [selectedTopic, setSelectedTopic] = useState(null);
 
   const quickFlow = [
-    { icon: <LayoutDashboard size={32} />, step: "01", title: "Sprawd\u017a status projektu", hint: "Pulpit pokazuje post\u0119p, terminy i najbli\u017csze zadania.", gradient: "from-violet-400 to-fuchsia-500" },
-    { icon: <Plus size={32} />, step: "02", title: "Dodaj kart\u0119", hint: "Utw\u00f3rz szybki task albo pe\u0142n\u0105 kart\u0119 z opisem i zdj\u0119ciem.", gradient: "from-sky-400 to-cyan-500" },
-    { icon: <GripVertical size={32} />, step: "03", title: "Przesuwaj prac\u0119", hint: "Zmieniaj etap zadania przez przeci\u0105ganie kart mi\u0119dzy kolumnami.", gradient: "from-emerald-400 to-teal-500" },
-    { icon: <Archive size={32} />, step: "04", title: "Porz\u0105dkuj", hint: "Gotowe sprawy przenie\u015b do archiwum zamiast od razu usuwa\u0107.", gradient: "from-amber-400 to-orange-500" },
+    { icon: <LayoutDashboard size={32} />, step: "01", title: "Sprawdź status projektu", hint: "Pulpit pokazuje postęp, terminy i najbliższe zadania.", gradient: "from-violet-400 to-fuchsia-500" },
+    { icon: <Plus size={32} />, step: "02", title: "Dodaj kartę", hint: "Utwórz szybki task albo pełną kartę z opisem i zdjęciem.", gradient: "from-sky-400 to-cyan-500" },
+    { icon: <GripVertical size={32} />, step: "03", title: "Przesuwaj pracę", hint: "Zmieniaj etap zadania przez przeciąganie kart między kolumnami.", gradient: "from-emerald-400 to-teal-500" },
+    { icon: <Archive size={32} />, step: "04", title: "Porządkuj", hint: "Gotowe sprawy przenieś do archiwum zamiast od razu usuwać.", gradient: "from-amber-400 to-orange-500" },
   ];
 
   const topics = [
@@ -20,93 +20,93 @@ export function HelpGuide({ t, onGoToInfo, onGoToTasks, onNewTask, onOpenTimelin
       id: "dashboard",
       icon: <LayoutDashboard size={26} />,
       title: "Dashboard",
-      hint: "Szybki podgl\u0105d projektu",
+      hint: "Szybki podgląd projektu",
       accent: "from-violet-400 to-fuchsia-500",
       details: {
         title: "Dashboard - centrum informacji",
-        intro: "Sekcja Informacje s\u0142u\u017cy do szybkiego sprawdzenia stanu pracy bez wchodzenia w ka\u017cd\u0105 kart\u0119 osobno. To miejsce najlepiej traktowa\u0107 jako panel kontrolny projektu.",
+        intro: "Sekcja Informacje służy do szybkiego sprawdzenia stanu pracy bez wchodzenia w każdą kartę osobno. To miejsce najlepiej traktować jako panel kontrolny projektu.",
         points: [
-          "Project Progress pokazuje og\u00f3lny udzia\u0142 zada\u0144 uko\u0144czonych w aktywnej pracy.",
-          "Today's Tasks pozwala szybko doda\u0107 nowe zadanie z tytu\u0142em, terminem i etapem.",
-          "Calendar pokazuje miesi\u0105c oraz dni, do kt\u00f3rych przypisano zadania.",
-          "Tasks Timeline daje wizualny podgl\u0105d bie\u017c\u0105cego tygodnia i prowadzi do pe\u0142nej osi czasu.",
-          "Przycisk Uk\u0142ad w g\u00f3rnym pasku pozwala zmienia\u0107 kolejno\u015b\u0107 i rozmiary kafelk\u00f3w pulpitu.",
+          "Project Progress pokazuje ogólny udział zadań ukończonych w aktywnej pracy.",
+          "Today's Tasks pozwala szybko dodać nowe zadanie z tytułem, terminem i etapem.",
+          "Calendar pokazuje miesiąc oraz dni, do których przypisano zadania.",
+          "Tasks Timeline daje wizualny podgląd bieżącego tygodnia i prowadzi do pełnej osi czasu.",
+          "Przycisk Układ w górnym pasku pozwala zmieniać kolejność i rozmiary kafelków pulpitu.",
         ],
-        tip: "Najlepiej zaczyna\u0107 dzie\u0144 od Dashboardu: szybko zobaczysz, co jest pilne, co utkn\u0119\u0142o i czy co\u015b zbli\u017ca si\u0119 do terminu.",
+        tip: "Najlepiej zaczynać dzień od Dashboardu: szybko zobaczysz, co jest pilne, co utknęło i czy coś zbliża się do terminu.",
       },
     },
     {
       id: "tasks",
       icon: <CheckSquare2 size={26} />,
-      title: "Karty zada\u0144",
-      hint: "Opis, etap, subtaski i zdj\u0119cia",
+      title: "Karty zadań",
+      hint: "Opis, etap, subtaski i zdjęcia",
       accent: "from-emerald-400 to-teal-500",
       details: {
-        title: "Karty zada\u0144 - pojedyncze sprawy do wykonania",
-        intro: "Ka\u017cda karta reprezentuje jedno zadanie. Mo\u017ce mie\u0107 nazw\u0119, opis, termin, etap, etykiety, subtaski oraz zdj\u0119cia. Dzi\u0119ki temu jedna karta mo\u017ce przechowywa\u0107 zar\u00f3wno prost\u0105 notatk\u0119, jak i pe\u0142niejszy opis sprawy.",
+        title: "Karty zadań - pojedyncze sprawy do wykonania",
+        intro: "Każda karta reprezentuje jedno zadanie. Może mieć nazwę, opis, termin, etap, etykiety, subtaski oraz zdjęcia. Dzięki temu jedna karta może przechowywać zarówno prostą notatkę, jak i pełniejszy opis sprawy.",
         points: [
-          "Klikni\u0119cie karty otwiera okno edycji.",
-          "Zmiana etapu odbywa si\u0119 przez wyb\u00f3r w oknie edycji albo przeci\u0105gni\u0119cie karty mi\u0119dzy kolumnami.",
-          "Zak\u0142adka Zadania ma kompaktowy pasek filtr\u00f3w: wyszukiwanie po tre\u015bci, etykiecie, priorytecie i zakresie dat.",
-          "Subtaski pomagaj\u0105 rozbi\u0107 wi\u0119ksze zadanie na mniejsze kroki.",
-          "Zdj\u0119cia dodane do karty pojawi\u0105 si\u0119 tak\u017ce w galerii zdj\u0119\u0107.",
+          "Kliknięcie karty otwiera okno edycji.",
+          "Zmiana etapu odbywa się przez wybór w oknie edycji albo przeciągnięcie karty między kolumnami.",
+          "Zakładka Zadania ma kompaktowy pasek filtrów: wyszukiwanie po treści, etykiecie, priorytecie i zakresie dat.",
+          "Subtaski pomagają rozbić większe zadanie na mniejsze kroki.",
+          "Zdjęcia dodane do karty pojawią się także w galerii zdjęć.",
         ],
-        tip: "Dla wi\u0119kszych spraw tw\u00f3rz subtaski i etykiety. Dzi\u0119ki temu post\u0119p i p\u00f3\u017aniejsze filtrowanie s\u0105 du\u017co czytelniejsze.",
+        tip: "Dla większych spraw twórz subtaski i etykiety. Dzięki temu postęp i późniejsze filtrowanie są dużo czytelniejsze.",
       },
     },
     {
       id: "timeline",
       icon: <Clock3 size={26} />,
       title: "Timeline",
-      hint: "Planowanie termin\u00f3w na osi czasu",
+      hint: "Planowanie terminów na osi czasu",
       accent: "from-sky-400 to-blue-500",
       details: {
         title: "Timeline - planowanie w czasie",
-        intro: "Timeline pokazuje zadania wed\u0142ug ich termin\u00f3w. W ma\u0142ej kafelce widzisz szybki podgl\u0105d aktualnego tygodnia, a po klikni\u0119ciu kafelki otwiera si\u0119 szczeg\u00f3\u0142owy widok osi czasu.",
+        intro: "Timeline pokazuje zadania według ich terminów. W małej kafelce widzisz szybki podgląd aktualnego tygodnia, a po kliknięciu kafelki otwiera się szczegółowy widok osi czasu.",
         points: [
-          "Mo\u017cesz wybra\u0107 zakres widoku: tydzie\u0144, miesi\u0105c, kwarta\u0142 albo rok.",
-          "Przeci\u0105gni\u0119cie paska zadania w szczeg\u00f3\u0142owym widoku zmienia termin w oryginalnej karcie.",
-          "Pod\u015bwietlenia pomagaj\u0105 zobaczy\u0107, do kt\u00f3rego dnia przypisane jest zadanie.",
-          "Kolor paska odpowiada etapowi, w kt\u00f3rym znajduje si\u0119 zadanie.",
+          "Możesz wybrać zakres widoku: tydzień, miesiąc, kwartał albo rok.",
+          "Przeciągnięcie paska zadania w szczegółowym widoku zmienia termin w oryginalnej karcie.",
+          "Podświetlenia pomagają zobaczyć, do którego dnia przypisane jest zadanie.",
+          "Kolor paska odpowiada etapowi, w którym znajduje się zadanie.",
         ],
-        tip: "Gdy ustawiasz termin, patrz na pod\u015bwietlon\u0105 dat\u0119 na osi. To ona pokazuje dzie\u0144, do kt\u00f3rego zadanie zostanie przypisane.",
+        tip: "Gdy ustawiasz termin, patrz na podświetloną datę na osi. To ona pokazuje dzień, do którego zadanie zostanie przypisane.",
       },
     },
     {
       id: "archive",
       icon: <Archive size={26} />,
       title: "Archiwum",
-      hint: "Zadania zako\u0144czone, ale zachowane",
+      hint: "Zadania zakończone, ale zachowane",
       accent: "from-amber-400 to-orange-500",
       details: {
-        title: "Archiwum - bezpieczne od\u0142o\u017cenie zadania",
-        intro: "Archiwum s\u0142u\u017cy do przechowywania zada\u0144, kt\u00f3re s\u0105 zako\u0144czone albo chwilowo niepotrzebne, ale nie powinny zosta\u0107 usuni\u0119te. To takie eleganckie pude\u0142ko opisane markerem, a nie czarna dziura.",
+        title: "Archiwum - bezpieczne odłożenie zadania",
+        intro: "Archiwum służy do przechowywania zadań, które są zakończone albo chwilowo niepotrzebne, ale nie powinny zostać usunięte. To takie eleganckie pudełko opisane markerem, a nie czarna dziura.",
         points: [
-          "Zarchiwizowane zadania znikaj\u0105 z g\u0142\u00f3wnej tablicy Kanban.",
-          "Nadal s\u0105 uwzgl\u0119dniane w raporcie post\u0119p\u00f3w i galerii zdj\u0119\u0107.",
-          "Archiwum ma wyszukiwark\u0119 tekstow\u0105 oraz filtry dat: od/do i tryb sprawdzania terminu albo daty archiwizacji.",
-          "Mo\u017cesz otworzy\u0107 kart\u0119 z archiwum i przywr\u00f3ci\u0107 j\u0105 do kolumny Gotowe.",
-          "Usuwanie jest osobn\u0105 akcj\u0105 i oznacza trwa\u0142e skasowanie karty z aplikacji.",
+          "Zarchiwizowane zadania znikają z głównej tablicy Kanban.",
+          "Nadal są uwzględniane w raporcie postępów i galerii zdjęć.",
+          "Archiwum ma wyszukiwarkę tekstową oraz filtry dat: od/do i tryb sprawdzania terminu albo daty archiwizacji.",
+          "Możesz otworzyć kartę z archiwum i przywrócić ją do kolumny Gotowe.",
+          "Usuwanie jest osobną akcją i oznacza trwałe skasowanie karty z aplikacji.",
         ],
-        tip: "Archiwum warto stosowa\u0107 do spraw zako\u0144czonych, kt\u00f3re mog\u0105 si\u0119 jeszcze przyda\u0107 jako historia pracy, dow\u00f3d, notatka albo wz\u00f3r.",
+        tip: "Archiwum warto stosować do spraw zakończonych, które mogą się jeszcze przydać jako historia pracy, dowód, notatka albo wzór.",
       },
     },
     {
       id: "gallery",
       icon: <ImageIcon size={26} />,
-      title: "Galeria zdj\u0119\u0107",
-      hint: "Wszystkie obrazy z task\u00f3w",
+      title: "Galeria zdjęć",
+      hint: "Wszystkie obrazy z tasków",
       accent: "from-pink-400 to-rose-500",
       details: {
-        title: "Galeria zdj\u0119\u0107 - szybkie odnajdywanie za\u0142\u0105cznik\u00f3w",
-        intro: "Galeria zbiera zdj\u0119cia ze wszystkich kart, r\u00f3wnie\u017c tych z archiwum. Dzi\u0119ki temu nie trzeba pami\u0119ta\u0107, w kt\u00f3rym zadaniu by\u0142o konkretne zdj\u0119cie.",
+        title: "Galeria zdjęć - szybkie odnajdywanie załączników",
+        intro: "Galeria zbiera zdjęcia ze wszystkich kart, również tych z archiwum. Dzięki temu nie trzeba pamiętać, w którym zadaniu było konkretne zdjęcie.",
         points: [
-          "Klikni\u0119cie miniatury otwiera wi\u0119kszy podgl\u0105d.",
-          "Podgl\u0105d pokazuje nazw\u0119 zadania, opis, termin i nazw\u0119 pliku.",
-          "Przycisk Zaprowad\u017a mnie do tego zadania otwiera w\u0142a\u015bciw\u0105 kart\u0119.",
-          "Zdj\u0119cia s\u0105 zmniejszane przy dodawaniu, aby aplikacja by\u0142a l\u017cejsza.",
+          "Kliknięcie miniatury otwiera większy podgląd.",
+          "Podgląd pokazuje nazwę zadania, opis, termin i nazwę pliku.",
+          "Przycisk Zaprowadź mnie do tego zadania otwiera właściwą kartę.",
+          "Zdjęcia są zmniejszane przy dodawaniu, aby aplikacja była lżejsza.",
         ],
-        tip: "To przydatne, gdy zadania s\u0105 dokumentowane zdj\u0119ciami, zrzutami ekranu albo skanami. Galeria dzia\u0142a jak wizualny indeks spraw.",
+        tip: "To przydatne, gdy zadania są dokumentowane zdjęciami, zrzutami ekranu albo skanami. Galeria działa jak wizualny indeks spraw.",
       },
     },
     {
@@ -117,44 +117,44 @@ export function HelpGuide({ t, onGoToInfo, onGoToTasks, onNewTask, onOpenTimelin
       accent: "from-violet-400 to-indigo-500",
       details: {
         title: "Kopia zapasowa - zapis i odtwarzanie tablicy",
-        intro: "Z g\u00f3rnego paska mo\u017cesz wykona\u0107 eksport oraz import danych tablicy. Kopia zapasowa zapisuje stan aplikacji do pliku JSON albo do tekstu, kt\u00f3ry mo\u017cna r\u0119cznie skopiowa\u0107 i wklei\u0107.",
+        intro: "Z górnego paska możesz wykonać eksport oraz import danych tablicy. Kopia zapasowa zapisuje stan aplikacji do pliku JSON albo do tekstu, który można ręcznie skopiować i wkleić.",
         points: [
-          "Eksport obejmuje zadania, archiwum, zdj\u0119cia, uk\u0142ad kafelk\u00f3w, aktywny widok, tryb kolorystyczny i wielko\u015b\u0107 tekstu.",
-          "Import zast\u0119puje aktualne dane zapisane w tej przegl\u0105darce.",
-          "Je\u015bli przegl\u0105darka zablokuje pobieranie pliku, mo\u017cna skopiowa\u0107 tre\u015b\u0107 eksportu i zapisa\u0107 j\u0105 r\u0119cznie jako plik .json.",
-          "Import dzia\u0142a zar\u00f3wno z pliku JSON, jak i z wklejonej tre\u015bci eksportu.",
+          "Eksport obejmuje zadania, archiwum, zdjęcia, układ kafelków, aktywny widok, tryb kolorystyczny i wielkość tekstu.",
+          "Import zastępuje aktualne dane zapisane w tej przeglądarce.",
+          "Jeśli przeglądarka zablokuje pobieranie pliku, można skopiować treść eksportu i zapisać ją ręcznie jako plik .json.",
+          "Import działa zarówno z pliku JSON, jak i z wklejonej treści eksportu.",
         ],
-        tip: "Przed wi\u0119kszymi zmianami zr\u00f3b eksport. To najszybsza polisa ubezpieczeniowa dla tablicy.",
+        tip: "Przed większymi zmianami zrób eksport. To najszybsza polisa ubezpieczeniowa dla tablicy.",
       },
     },
     {
       id: "report",
       icon: <Activity size={26} />,
       title: "Raport",
-      hint: "Post\u0119p i wydajno\u015b\u0107 pracy",
+      hint: "Postęp i wydajność pracy",
       accent: "from-cyan-400 to-violet-500",
       details: {
-        title: "Raport post\u0119p\u00f3w - liczby bez r\u0119cznego liczenia",
-        intro: "Raport zbiera dane z ca\u0142ej aplikacji: zada\u0144 aktywnych, uko\u0144czonych i archiwalnych. Pokazuje nie tylko liczb\u0119 kart, ale te\u017c post\u0119p subtask\u00f3w, rozk\u0142ad po etapach oraz zadania po terminie.",
+        title: "Raport postępów - liczby bez ręcznego liczenia",
+        intro: "Raport zbiera dane z całej aplikacji: zadań aktywnych, ukończonych i archiwalnych. Pokazuje nie tylko liczbę kart, ale też postęp subtasków, rozkład po etapach oraz zadania po terminie.",
         points: [
-          "Wszystkie karty obejmuj\u0105 tak\u017ce archiwum.",
-          "Uko\u0144czenie liczone jest na podstawie kolumny Gotowe oraz post\u0119pu subtask\u00f3w.",
-          "Po terminie oznacza aktywne zadania z dat\u0105 wcze\u015bniejsz\u0105 ni\u017c dzisiaj.",
-          "Rozk\u0142ad po etapach pokazuje, gdzie gromadzi si\u0119 najwi\u0119cej pracy.",
+          "Wszystkie karty obejmują także archiwum.",
+          "Ukończenie liczone jest na podstawie kolumny Gotowe oraz postępu subtasków.",
+          "Po terminie oznacza aktywne zadania z datą wcześniejszą niż dzisiaj.",
+          "Rozkład po etapach pokazuje, gdzie gromadzi się najwięcej pracy.",
         ],
-        tip: "Raport pomaga zobaczy\u0107, czy projekt idzie p\u0142ynnie, czy zadania zaczynaj\u0105 kumulowa\u0107 si\u0119 w jednym etapie.",
+        tip: "Raport pomaga zobaczyć, czy projekt idzie płynnie, czy zadania zaczynają kumulować się w jednym etapie.",
       },
     },
   ];
 
   const navigationCards = [
-    { icon: <LayoutDashboard size={28} />, title: "Dashboard", hint: "Post\u0119p, kalendarz i panel sterowania", action: onGoToInfo, accent: "from-violet-400 to-fuchsia-500", tag: "Informacje" },
-    { icon: <Plus size={28} />, title: "Nowe zadanie", hint: "Otwiera pe\u0142n\u0105 kart\u0119 edycji zadania", action: onNewTask, accent: "from-sky-400 to-cyan-500", tag: "Start" },
-    { icon: <CheckSquare2 size={28} />, title: "Tablica zada\u0144", hint: "Kolumny Kanban i przesuwanie kart", action: onGoToTasks, accent: "from-emerald-400 to-teal-500", tag: "Zadania" },
-    { icon: <Clock3 size={28} />, title: "Timeline", hint: "Szczeg\u00f3\u0142owy widok termin\u00f3w", action: onOpenTimeline, accent: "from-blue-400 to-sky-500", tag: "Plan" },
-    { icon: <Activity size={28} />, title: "Raport", hint: "Post\u0119p, wydajno\u015b\u0107 i archiwum", action: onOpenPerformance, accent: "from-cyan-400 to-violet-500", tag: "Analiza" },
-    { icon: <ImageIcon size={28} />, title: "Galeria", hint: "Zdj\u0119cia ze wszystkich task\u00f3w", action: onOpenGallery, accent: "from-pink-400 to-rose-500", tag: "Zdj\u0119cia" },
-    { icon: <Archive size={28} />, title: "Archiwum", hint: "Zadania od\u0142o\u017cone, ale zachowane", action: onOpenArchive, accent: "from-amber-400 to-orange-500", tag: "Historia" },
+    { icon: <LayoutDashboard size={28} />, title: "Dashboard", hint: "Postęp, kalendarz i panel sterowania", action: onGoToInfo, accent: "from-violet-400 to-fuchsia-500", tag: "Informacje" },
+    { icon: <Plus size={28} />, title: "Nowe zadanie", hint: "Otwiera pełną kartę edycji zadania", action: onNewTask, accent: "from-sky-400 to-cyan-500", tag: "Start" },
+    { icon: <CheckSquare2 size={28} />, title: "Tablica zadań", hint: "Kolumny Kanban i przesuwanie kart", action: onGoToTasks, accent: "from-emerald-400 to-teal-500", tag: "Zadania" },
+    { icon: <Clock3 size={28} />, title: "Timeline", hint: "Szczegółowy widok terminów", action: onOpenTimeline, accent: "from-blue-400 to-sky-500", tag: "Plan" },
+    { icon: <Activity size={28} />, title: "Raport", hint: "Postęp, wydajność i archiwum", action: onOpenPerformance, accent: "from-cyan-400 to-violet-500", tag: "Analiza" },
+    { icon: <ImageIcon size={28} />, title: "Galeria", hint: "Zdjęcia ze wszystkich tasków", action: onOpenGallery, accent: "from-pink-400 to-rose-500", tag: "Zdjęcia" },
+    { icon: <Archive size={28} />, title: "Archiwum", hint: "Zadania odłożone, ale zachowane", action: onOpenArchive, accent: "from-amber-400 to-orange-500", tag: "Historia" },
   ];
 
   return (
@@ -163,16 +163,16 @@ export function HelpGuide({ t, onGoToInfo, onGoToTasks, onNewTask, onOpenTimelin
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
           <div>
             <div className={cx("mb-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black shadow-sm", t.buttonPrimary)}>
-              <BookOpen size={14} /> Instrukcja obs\u0142ugi
+              <BookOpen size={14} /> Instrukcja obsługi
             </div>
             <h2 className="text-2xl font-black">Szybki przewodnik po aplikacji</h2>
             <p className={cx("mt-1 max-w-2xl text-sm leading-6", t.textMuted)}>
-              Najwa\u017cniejsze dzia\u0142ania s\u0105 pokazane skr\u00f3towo. Szczeg\u00f3\u0142owy opis znajdziesz po klikni\u0119ciu wybranej kafelki - uwzgl\u0119dnia te\u017c filtry zada\u0144, archiwum oraz kopie zapasowe.
+              Najważniejsze działania są pokazane skrótowo. Szczegółowy opis znajdziesz po kliknięciu wybranej kafelki - uwzględnia też filtry zadań, archiwum oraz kopie zapasowe.
             </p>
           </div>
 
           <div className={cx("flex items-center gap-2 rounded-full px-3 py-2 text-xs font-black ring-1", t.chip)}>
-            <Sparkles size={15} /> kliknij kafelk\u0119, \u017ceby rozwin\u0105\u0107
+            <Sparkles size={15} /> kliknij kafelkę, żeby rozwinąć
           </div>
         </div>
 
@@ -193,14 +193,14 @@ export function HelpGuide({ t, onGoToInfo, onGoToTasks, onNewTask, onOpenTimelin
 
       <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <section className={cx("rounded-[2rem] border p-5 shadow-xl backdrop-blur-xl", t.card)}>
-          <DashboardTitle t={t} icon={<Sparkles size={12} />} eyebrow="Modu\u0142y" title="Kliknij, aby zobaczy\u0107 szczeg\u00f3\u0142y" />
+          <DashboardTitle t={t} icon={<Sparkles size={12} />} eyebrow="Moduły" title="Kliknij, aby zobaczyć szczegóły" />
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {topics.map((topic) => (
               <button key={topic.id} type="button" onClick={() => setSelectedTopic(topic)} className={cx("group rounded-3xl border p-4 text-left shadow-lg transition hover:-translate-y-1 hover:shadow-2xl", t.cardSolid)}>
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <span className={cx("flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg transition group-hover:scale-105", topic.accent)}>{topic.icon}</span>
-                  <span className={cx("rounded-full px-2.5 py-1 text-[10px] font-black ring-1", t.chip)}>wi\u0119cej</span>
+                  <span className={cx("rounded-full px-2.5 py-1 text-[10px] font-black ring-1", t.chip)}>więcej</span>
                 </div>
                 <h3 className="text-base font-black">{topic.title}</h3>
                 <p className={cx("mt-1 text-xs font-semibold leading-5", t.textSoft)}>{topic.hint}</p>
@@ -210,7 +210,7 @@ export function HelpGuide({ t, onGoToInfo, onGoToTasks, onNewTask, onOpenTimelin
         </section>
 
         <section className={cx("rounded-[2rem] border p-5 shadow-xl backdrop-blur-xl", t.card)}>
-          <DashboardTitle t={t} icon={<LayoutDashboard size={12} />} eyebrow="Skr\u00f3ty" title="Najbardziej u\u017cyteczne miejsca" />
+          <DashboardTitle t={t} icon={<LayoutDashboard size={12} />} eyebrow="Skróty" title="Najbardziej użyteczne miejsca" />
 
           <div className="grid gap-3">
             {navigationCards.map((item) => (
@@ -259,7 +259,7 @@ export function HelpDetailModal({ t, topic, onClose }) {
                 <span className={cx("flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg", topic.accent)}>{topic.icon}</span>
                 <div>
                   <div className={cx("mb-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black shadow-sm", t.buttonPrimary)}>
-                    <BookOpen size={14} /> Szczeg\u00f3\u0142y
+                    <BookOpen size={14} /> Szczegóły
                   </div>
                   <h2 className="text-2xl font-black leading-tight">{topic.details.title}</h2>
                 </div>

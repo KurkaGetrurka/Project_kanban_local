@@ -39,15 +39,15 @@ export const defaultColumns = [
 
 export const defaultDashboardOrder = ["progress", "today", "calendar", "taskProgress", "actions", "timeline"];
 export const dashboardLabels = {
-  progress: "Post\u0119p projektu",
+  progress: "Postęp projektu",
   today: "Dzisiejsze zadania",
   calendar: "Kalendarz",
-  taskProgress: "Post\u0119p zada\u0144",
+  taskProgress: "Postęp zadań",
   actions: "Panel sterowania",
-  timeline: "O\u015b czasu zada\u0144",
+  timeline: "Oś czasu zadań",
 };
 export const dashboardSizeOptions = ["normal", "wide", "large", "full"];
-export const dashboardSizeLabels = { normal: "Normalny", wide: "Szerszy", large: "Du\u017cy", full: "Pe\u0142ny" };
+export const dashboardSizeLabels = { normal: "Normalny", wide: "Szerszy", large: "Duży", full: "Pełny" };
 export const dashboardSizeClasses = {
   normal: "lg:col-span-2",
   wide: "lg:col-span-3",
@@ -69,29 +69,29 @@ function createDefaultTasks() {
     {
       id: uid(),
       columnId: "todo",
-      title: "Wprowadzi\u0107 pierwsze zadanie",
-      description: "Kliknij kart\u0119, aby uzupe\u0142ni\u0107 szczeg\u00f3\u0142y. Lista podzada\u0144 jest widoczna r\u00f3wnie\u017c na kafelku zadania.",
+      title: "Wprowadzić pierwsze zadanie",
+      description: "Kliknij kartę, aby uzupełnić szczegóły. Lista podzadań jest widoczna również na kafelku zadania.",
       labels: [{ id: uid(), text: "start", color: "pink" }],
       dueDate: "2026-06-02",
       priority: "medium",
       subtasks: [
-        { id: uid(), text: "Otworzy\u0107 kart\u0119", done: true },
-        { id: uid(), text: "Zmieni\u0107 tre\u015b\u0107", done: false },
+        { id: uid(), text: "Otworzyć kartę", done: true },
+        { id: uid(), text: "Zmienić treść", done: false },
       ],
       createdAt: baseCreatedAt,
     },
     {
       id: uid(),
       columnId: "doing",
-      title: "Dopracowa\u0107 pulpit projektu",
-      description: "Uporz\u0105dkowa\u0107 kafelki informacyjne, kalendarz, o\u015b czasu oraz wykres post\u0119pu projektu.",
+      title: "Dopracować pulpit projektu",
+      description: "Uporządkować kafelki informacyjne, kalendarz, oś czasu oraz wykres postępu projektu.",
       labels: [{ id: uid(), text: "projekt", color: "blue" }],
       dueDate: "2026-06-06",
       priority: "high",
       subtasks: [
-        { id: uid(), text: "Dostosowa\u0107 mini kalendarz", done: true },
-        { id: uid(), text: "Uzupe\u0142ni\u0107 wykres post\u0119pu projektu", done: false },
-        { id: uid(), text: "Dopracowa\u0107 o\u015b czasu zada\u0144", done: false },
+        { id: uid(), text: "Dostosować mini kalendarz", done: true },
+        { id: uid(), text: "Uzupełnić wykres postępu projektu", done: false },
+        { id: uid(), text: "Dopracować oś czasu zadań", done: false },
       ],
       createdAt: baseCreatedAt + 1,
     },
@@ -208,7 +208,7 @@ export const labelSwatchesDark = {
 
 export const priorityOptions = [
   { id: "low", title: "Niski", light: "bg-emerald-100 text-emerald-700 ring-emerald-200", dark: "bg-emerald-500/15 text-emerald-200 ring-emerald-400/30" },
-  { id: "medium", title: "\u015aredni", light: "bg-sky-100 text-sky-700 ring-sky-200", dark: "bg-sky-500/15 text-sky-200 ring-sky-400/30" },
+  { id: "medium", title: "Średni", light: "bg-sky-100 text-sky-700 ring-sky-200", dark: "bg-sky-500/15 text-sky-200 ring-sky-400/30" },
   { id: "high", title: "Wysoki", light: "bg-amber-100 text-amber-800 ring-amber-200", dark: "bg-amber-500/15 text-amber-200 ring-amber-400/30" },
   { id: "urgent", title: "Pilny", light: "bg-rose-100 text-rose-700 ring-rose-200", dark: "bg-rose-500/15 text-rose-200 ring-rose-400/30" },
 ];
@@ -291,10 +291,10 @@ export function clampNumber(value, min, max) {
 }
 // Timeline and calendar helpers
 export const timelineViewPresets = {
-  week: { label: "Tydzie\u0144", days: 7, unitLabel: "Dni", unit: "day" },
-  month: { label: "Miesi\u0105c", days: 31, unitLabel: "Dni miesi\u0105ca", unit: "monthDay" },
-  quarter: { label: "Kwarta\u0142", days: 92, unitLabel: "Tygodnie", unit: "week" },
-  year: { label: "Rok", days: 365, unitLabel: "Miesi\u0105ce", unit: "month" },
+  week: { label: "Tydzień", days: 7, unitLabel: "Dni", unit: "day" },
+  month: { label: "Miesiąc", days: 31, unitLabel: "Dni miesiąca", unit: "monthDay" },
+  quarter: { label: "Kwartał", days: 92, unitLabel: "Tygodnie", unit: "week" },
+  year: { label: "Rok", days: 365, unitLabel: "Miesiące", unit: "month" },
 };
 export function normalizeTimelineView(value) {
   return timelineViewPresets[value] ? value : "month";
@@ -687,10 +687,10 @@ export function readImageAttachment(file) {
       return;
     }
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Nie uda\u0142o si\u0119 odczyta\u0107 obrazu."));
+    reader.onerror = () => reject(new Error("Nie udało się odczytać obrazu."));
     reader.onload = () => {
       const img = new Image();
-      img.onerror = () => reject(new Error("Nie uda\u0142o si\u0119 przygotowa\u0107 podgl\u0105du obrazu."));
+      img.onerror = () => reject(new Error("Nie udało się przygotować podglądu obrazu."));
       img.onload = () => {
         const maxSide = 1200;
         const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
@@ -820,7 +820,7 @@ export function buildBackupPayload(state) {
 
 export function parseBackupText(text) {
   const raw = String(text || "").replace(/^\uFEFF/, "").trim();
-  if (!raw) throw new Error("Nie podano tre\u015bci kopii zapasowej.");
+  if (!raw) throw new Error("Nie podano treści kopii zapasowej.");
 
   try {
     return JSON.parse(raw);
@@ -828,7 +828,7 @@ export function parseBackupText(text) {
     const start = raw.indexOf("{");
     const end = raw.lastIndexOf("}");
     if (start >= 0 && end > start) return JSON.parse(raw.slice(start, end + 1));
-    throw new Error("Nie uda\u0142o si\u0119 odczyta\u0107 pliku JSON. Sprawd\u017a, czy wklejona tre\u015b\u0107 pochodzi z eksportu tej aplikacji.");
+    throw new Error("Nie udało się odczytać pliku JSON. Sprawdź, czy wklejona treść pochodzi z eksportu tej aplikacji.");
   }
 }
 
@@ -849,7 +849,7 @@ export function readTextFile(file) {
   if (typeof file.text === "function") return file.text();
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Nie uda\u0142o si\u0119 odczyta\u0107 pliku."));
+    reader.onerror = () => reject(new Error("Nie udało się odczytać pliku."));
     reader.onload = () => resolve(String(reader.result || ""));
     reader.readAsText(file, "utf-8");
   });
