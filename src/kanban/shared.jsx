@@ -1,496 +1,106 @@
 import React from "react";
 
-// App keys and tiny shared utilities
 export const STORAGE_KEY = "aesthetic-kanban-board-v5-fixed-timeline-drag";
-export const LEGACY_KEYS = [
-  "aesthetic-kanban-board-v4-no-tailwind-dark",
-  "aesthetic-kanban-board-v3",
-  "aesthetic-kanban-board-v2",
-  "aesthetic-kanban-board-v1",
-];
-
+export const LEGACY_KEYS = ["aesthetic-kanban-board-v4-no-tailwind-dark", "aesthetic-kanban-board-v3", "aesthetic-kanban-board-v2", "aesthetic-kanban-board-v1"];
 export const uid = () => Math.random().toString(36).slice(2, 10);
 export const cx = (...classes) => classes.filter(Boolean).join(" ");
-export const safeStorageGetItem = (key) => {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-};
-export const safeStorageSetItem = (key, value) => {
-  if (typeof window === "undefined") return false;
-  try {
-    window.localStorage.setItem(key, value);
-    return true;
-  } catch {
-    return false;
-  }
-};
+export const safeStorageGetItem = (key) => { try { return typeof window === "undefined" ? null : window.localStorage.getItem(key); } catch { return null; } };
+export const safeStorageSetItem = (key, value) => { try { if (typeof window === "undefined") return false; window.localStorage.setItem(key, value); return true; } catch { return false; } };
 
-// Board defaults
 export const defaultColumns = [
   { id: "todo", title: "Do zrobienia", accent: "from-rose-400 to-pink-500" },
   { id: "doing", title: "W trakcie", accent: "from-amber-400 to-orange-500" },
   { id: "review", title: "Do sprawdzenia", accent: "from-sky-400 to-cyan-500" },
   { id: "done", title: "Gotowe", accent: "from-emerald-400 to-teal-500" },
 ];
-
 export const defaultDashboardOrder = ["progress", "today", "calendar", "taskProgress", "actions", "timeline"];
-export const dashboardLabels = {
-  progress: "Postęp projektu",
-  today: "Dzisiejsze zadania",
-  calendar: "Kalendarz",
-  taskProgress: "Postęp zadań",
-  actions: "Panel sterowania",
-  timeline: "Oś czasu zadań",
-};
+export const dashboardLabels = { progress: "Postęp projektu", today: "Dzisiejsze zadania", calendar: "Kalendarz", taskProgress: "Postęp zadań", actions: "Panel sterowania", timeline: "Oś czasu zadań" };
 export const dashboardSizeOptions = ["normal", "wide", "large", "full"];
 export const dashboardSizeLabels = { normal: "Normalny", wide: "Szerszy", large: "Duży", full: "Pełny" };
-export const dashboardSizeClasses = {
-  normal: "lg:col-span-2",
-  wide: "lg:col-span-3",
-  large: "lg:col-span-4",
-  full: "lg:col-span-6",
-};
-export const defaultDashboardSizes = {
-  progress: "normal",
-  today: "normal",
-  calendar: "normal",
-  taskProgress: "normal",
-  actions: "normal",
-  timeline: "normal",
-};
-
+export const dashboardSizeClasses = { normal: "lg:col-span-2", wide: "lg:col-span-3", large: "lg:col-span-4", full: "lg:col-span-6" };
+export const defaultDashboardSizes = { progress: "normal", today: "normal", calendar: "normal", taskProgress: "normal", actions: "normal", timeline: "normal" };
 export const defaultTasks = [];
-export const defaultBoardState = {
-  columns: defaultColumns,
-  tasks: defaultTasks,
-  darkMode: true,
-  fontScale: 100,
-  dashboardOrder: defaultDashboardOrder,
-  dashboardSizes: defaultDashboardSizes,
-  activeSection: "info",
-};
+export const defaultBoardState = { columns: defaultColumns, tasks: defaultTasks, darkMode: true, fontScale: 100, dashboardOrder: defaultDashboardOrder, dashboardSizes: defaultDashboardSizes, activeSection: "info" };
 
-// Visual theme tokens
 export const theme = {
-  light: {
-    app: "bg-[radial-gradient(circle_at_top_left,_#fbcfe8,_transparent_32%),radial-gradient(circle_at_top_right,_#bfdbfe,_transparent_30%),linear-gradient(135deg,_#fff7ed,_#f8fafc_45%,_#eef2ff)] text-slate-900",
-    card: "border-white/70 bg-white/70 shadow-slate-200/50",
-    cardSolid: "border-white/70 bg-white shadow-slate-200/60",
-    subtle: "bg-slate-50 text-slate-500",
-    input: "border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400",
-    inputSolid: "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400",
-    textMuted: "text-slate-500",
-    textSoft: "text-slate-400",
-    border: "border-slate-200",
-    chip: "bg-white/80 ring-slate-100 text-slate-600",
-    buttonPrimary: "bg-slate-950 text-white shadow-slate-300",
-    buttonSoft: "border-slate-200 bg-white/80 text-slate-700 hover:bg-white",
-    emptyDay: "bg-slate-100 text-slate-600 hover:bg-slate-200",
-    taskCard: "border-white/70 bg-white shadow-slate-200/70",
-    modal: "border-white/70 bg-white",
-    overlay: "bg-slate-950/50",
-    progressTrack: "bg-slate-100",
-    progressCircleTrack: "rgba(148, 163, 184, 0.32)",
-    miniTrack: "bg-slate-100/70",
-    ringOffset: "ring-offset-white",
-    actionPrimary: "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-sky-500 text-white shadow-violet-300/40 hover:brightness-110",
-    actionSecondary: "border-slate-200 bg-slate-100/80 text-slate-700 hover:bg-slate-200/80",
-    hoverSoft: "hover:bg-slate-100/80",
-    divider: "border-slate-200",
-    imageBorder: "border-slate-200",
-    dangerButton: "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100",
-    successButton: "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
-    iconDanger: "text-slate-500 hover:bg-rose-50 hover:text-rose-600",
-  },
-  dark: {
-    app: "bg-[radial-gradient(circle_at_top_left,_rgba(168,85,247,.20),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(14,165,233,.16),_transparent_28%),linear-gradient(135deg,_#020617,_#0f172a_55%,_#18181b)] text-slate-100",
-    card: "border-white/10 bg-slate-950/45 shadow-black/30",
-    cardSolid: "border-white/10 bg-slate-900 shadow-black/30",
-    subtle: "bg-white/5 text-slate-400",
-    input: "border-white/10 bg-white/5 text-slate-100 placeholder:text-slate-500",
-    inputSolid: "border-white/10 bg-slate-950 text-slate-100 placeholder:text-slate-500",
-    textMuted: "text-slate-300",
-    textSoft: "text-slate-500",
-    border: "border-white/10",
-    chip: "bg-white/10 ring-white/10 text-slate-200",
-    buttonPrimary: "bg-white text-slate-950 shadow-black/30",
-    buttonSoft: "border-white/10 bg-white/10 text-slate-100 hover:bg-white/15",
-    emptyDay: "bg-white/10 text-slate-300 hover:bg-white/15",
-    taskCard: "border-white/10 bg-slate-900 shadow-black/30",
-    modal: "border-white/10 bg-slate-950",
-    overlay: "bg-slate-950/70",
-    progressTrack: "bg-white/10",
-    progressCircleTrack: "rgba(139, 92, 246, 0.18)",
-    miniTrack: "bg-white/5",
-    ringOffset: "ring-offset-slate-950",
-    actionPrimary: "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-sky-500 text-white shadow-violet-950/40 hover:brightness-110",
-    actionSecondary: "border-white/10 bg-slate-800/80 text-slate-100 hover:bg-slate-700/80",
-    hoverSoft: "hover:bg-white/10",
-    divider: "border-white/10",
-    imageBorder: "border-white/10",
-    dangerButton: "border-rose-400/30 bg-rose-500/10 text-rose-200 hover:bg-rose-500/20",
-    successButton: "border-emerald-400/30 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20",
-    iconDanger: "text-slate-400 hover:bg-rose-500/15 hover:text-rose-200",
-  },
+  light: { app: "bg-[radial-gradient(circle_at_top_left,_#fbcfe8,_transparent_32%),radial-gradient(circle_at_top_right,_#bfdbfe,_transparent_30%),linear-gradient(135deg,_#fff7ed,_#f8fafc_45%,_#eef2ff)] text-slate-900", card: "border-white/70 bg-white/70 shadow-slate-200/50", cardSolid: "border-white/70 bg-white shadow-slate-200/60", subtle: "bg-slate-50 text-slate-500", input: "border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400", inputSolid: "border-slate-200 bg-white text-slate-900 placeholder:text-slate-400", textMuted: "text-slate-500", textSoft: "text-slate-400", border: "border-slate-200", chip: "bg-white/80 ring-slate-100 text-slate-600", buttonPrimary: "bg-slate-950 text-white shadow-slate-300", buttonSoft: "border-slate-200 bg-white/80 text-slate-700 hover:bg-white", emptyDay: "bg-slate-100 text-slate-600 hover:bg-slate-200", taskCard: "border-white/70 bg-white shadow-slate-200/70", modal: "border-white/70 bg-white", overlay: "bg-slate-950/50", progressTrack: "bg-slate-100", progressCircleTrack: "rgba(148, 163, 184, 0.32)", miniTrack: "bg-slate-100/70", ringOffset: "ring-offset-white", actionPrimary: "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-sky-500 text-white shadow-violet-300/40 hover:brightness-110", actionSecondary: "border-slate-200 bg-slate-100/80 text-slate-700 hover:bg-slate-200/80", hoverSoft: "hover:bg-slate-100/80", divider: "border-slate-200", imageBorder: "border-slate-200", dangerButton: "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100", successButton: "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100", iconDanger: "text-slate-500 hover:bg-rose-50 hover:text-rose-600" },
+  dark: { app: "bg-[radial-gradient(circle_at_top_left,_rgba(168,85,247,.20),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(14,165,233,.16),_transparent_28%),linear-gradient(135deg,_#020617,_#0f172a_55%,_#18181b)] text-slate-100", card: "border-white/10 bg-slate-950/45 shadow-black/30", cardSolid: "border-white/10 bg-slate-900 shadow-black/30", subtle: "bg-white/5 text-slate-400", input: "border-white/10 bg-white/5 text-slate-100 placeholder:text-slate-500", inputSolid: "border-white/10 bg-slate-950 text-slate-100 placeholder:text-slate-500", textMuted: "text-slate-300", textSoft: "text-slate-500", border: "border-white/10", chip: "bg-white/10 ring-white/10 text-slate-200", buttonPrimary: "bg-white text-slate-950 shadow-black/30", buttonSoft: "border-white/10 bg-white/10 text-slate-100 hover:bg-white/15", emptyDay: "bg-white/10 text-slate-300 hover:bg-white/15", taskCard: "border-white/10 bg-slate-900 shadow-black/30", modal: "border-white/10 bg-slate-950", overlay: "bg-slate-950/70", progressTrack: "bg-white/10", progressCircleTrack: "rgba(139, 92, 246, 0.18)", miniTrack: "bg-white/5", ringOffset: "ring-offset-slate-950", actionPrimary: "bg-gradient-to-r from-violet-500 via-fuchsia-500 to-sky-500 text-white shadow-violet-950/40 hover:brightness-110", actionSecondary: "border-white/10 bg-slate-800/80 text-slate-100 hover:bg-slate-700/80", hoverSoft: "hover:bg-white/10", divider: "border-white/10", imageBorder: "border-white/10", dangerButton: "border-rose-400/30 bg-rose-500/10 text-rose-200 hover:bg-rose-500/20", successButton: "border-emerald-400/30 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20", iconDanger: "text-slate-400 hover:bg-rose-500/15 hover:text-rose-200" },
 };
 
-export function selectOptionStyle(t) {
-  const isDarkTheme = String(t?.inputSolid || t?.modal || "").includes("slate-950");
-  return {
-    backgroundColor: isDarkTheme ? "#020617" : "#ffffff",
-    color: isDarkTheme ? "#e2e8f0" : "#0f172a",
-  };
-}
-
-// Labels and task priority
-export const labelThemes = {
-  pink: "bg-pink-100 text-pink-700 ring-pink-200",
-  violet: "bg-violet-100 text-violet-700 ring-violet-200",
-  blue: "bg-sky-100 text-sky-700 ring-sky-200",
-  green: "bg-emerald-100 text-emerald-700 ring-emerald-200",
-  amber: "bg-amber-100 text-amber-800 ring-amber-200",
-  gray: "bg-slate-100 text-slate-700 ring-slate-200",
-};
-export const labelThemesDark = {
-  pink: "bg-pink-500/15 text-pink-200 ring-pink-400/30",
-  violet: "bg-violet-500/15 text-violet-200 ring-violet-400/30",
-  blue: "bg-sky-500/15 text-sky-200 ring-sky-400/30",
-  green: "bg-emerald-500/15 text-emerald-200 ring-emerald-400/30",
-  amber: "bg-amber-500/15 text-amber-200 ring-amber-400/30",
-  gray: "bg-slate-700/50 text-slate-200 ring-slate-500/40",
-};
-export const labelSwatches = {
-  pink: "bg-gradient-to-br from-pink-300 via-pink-500 to-rose-600 shadow-pink-300/50",
-  violet: "bg-gradient-to-br from-violet-300 via-violet-500 to-purple-700 shadow-violet-300/50",
-  blue: "bg-gradient-to-br from-sky-300 via-sky-500 to-blue-700 shadow-sky-300/50",
-  green: "bg-gradient-to-br from-emerald-300 via-emerald-500 to-teal-700 shadow-emerald-300/50",
-  amber: "bg-gradient-to-br from-amber-200 via-amber-400 to-orange-600 shadow-amber-300/50",
-  gray: "bg-gradient-to-br from-slate-300 via-slate-500 to-slate-700 shadow-slate-300/50",
-};
-export const labelSwatchesDark = {
-  pink: "bg-gradient-to-br from-pink-300 via-pink-500 to-rose-600 shadow-pink-500/35",
-  violet: "bg-gradient-to-br from-violet-300 via-violet-500 to-purple-700 shadow-violet-500/35",
-  blue: "bg-gradient-to-br from-sky-300 via-sky-500 to-blue-700 shadow-sky-500/35",
-  green: "bg-gradient-to-br from-emerald-300 via-emerald-500 to-teal-700 shadow-emerald-500/35",
-  amber: "bg-gradient-to-br from-amber-200 via-amber-400 to-orange-600 shadow-amber-500/35",
-  gray: "bg-gradient-to-br from-slate-300 via-slate-500 to-slate-700 shadow-slate-500/35",
-};
-
+export const labelThemes = { pink: "bg-pink-100 text-pink-700 ring-pink-200", violet: "bg-violet-100 text-violet-700 ring-violet-200", blue: "bg-sky-100 text-sky-700 ring-sky-200", green: "bg-emerald-100 text-emerald-700 ring-emerald-200", amber: "bg-amber-100 text-amber-800 ring-amber-200", gray: "bg-slate-100 text-slate-700 ring-slate-200" };
+export const labelThemesDark = { pink: "bg-pink-500/15 text-pink-200 ring-pink-400/30", violet: "bg-violet-500/15 text-violet-200 ring-violet-400/30", blue: "bg-sky-500/15 text-sky-200 ring-sky-400/30", green: "bg-emerald-500/15 text-emerald-200 ring-emerald-400/30", amber: "bg-amber-500/15 text-amber-200 ring-amber-400/30", gray: "bg-slate-700/50 text-slate-200 ring-slate-500/40" };
+export const labelSwatches = { pink: "bg-gradient-to-br from-pink-300 via-pink-500 to-rose-600 shadow-pink-300/50", violet: "bg-gradient-to-br from-violet-300 via-violet-500 to-purple-700 shadow-violet-300/50", blue: "bg-gradient-to-br from-sky-300 via-sky-500 to-blue-700 shadow-sky-300/50", green: "bg-gradient-to-br from-emerald-300 via-emerald-500 to-teal-700 shadow-emerald-300/50", amber: "bg-gradient-to-br from-amber-200 via-amber-400 to-orange-600 shadow-amber-300/50", gray: "bg-gradient-to-br from-slate-300 via-slate-500 to-slate-700 shadow-slate-300/50" };
+export const labelSwatchesDark = { pink: "bg-gradient-to-br from-pink-300 via-pink-500 to-rose-600 shadow-pink-500/35", violet: "bg-gradient-to-br from-violet-300 via-violet-500 to-purple-700 shadow-violet-500/35", blue: "bg-gradient-to-br from-sky-300 via-sky-500 to-blue-700 shadow-sky-500/35", green: "bg-gradient-to-br from-emerald-300 via-emerald-500 to-teal-700 shadow-emerald-500/35", amber: "bg-gradient-to-br from-amber-200 via-amber-400 to-orange-600 shadow-amber-500/35", gray: "bg-gradient-to-br from-slate-300 via-slate-500 to-slate-700 shadow-slate-500/35" };
 export const priorityOptions = [
   { id: "low", title: "Niski", light: "bg-emerald-100 text-emerald-700 ring-emerald-200", dark: "bg-emerald-500/15 text-emerald-200 ring-emerald-400/30" },
   { id: "medium", title: "Średni", light: "bg-sky-100 text-sky-700 ring-sky-200", dark: "bg-sky-500/15 text-sky-200 ring-sky-400/30" },
   { id: "high", title: "Wysoki", light: "bg-amber-100 text-amber-800 ring-amber-200", dark: "bg-amber-500/15 text-amber-200 ring-amber-400/30" },
   { id: "urgent", title: "Pilny", light: "bg-rose-100 text-rose-700 ring-rose-200", dark: "bg-rose-500/15 text-rose-200 ring-rose-400/30" },
 ];
+export const normalizeTaskPriority = (value) => priorityOptions.some((item) => item.id === value) ? value : "medium";
+export const priorityMeta = (priority) => priorityOptions.find((item) => item.id === normalizeTaskPriority(priority)) || priorityOptions[1];
+export const priorityChipClass = (priority, isDark) => isDark ? priorityMeta(priority).dark : priorityMeta(priority).light;
+export function PriorityToggleGroup({ value, onChange, isDark, compact = false }) { return <div className={cx("grid w-full grid-cols-2", compact ? "gap-1.5 sm:grid-cols-2" : "gap-2 sm:grid-cols-4")}>{priorityOptions.map((p) => { const active = normalizeTaskPriority(value) === p.id; return <button key={p.id} type="button" onClick={() => onChange(p.id)} className={cx("min-w-0 rounded-2xl px-2 py-2 text-center text-[11px] font-black leading-tight ring-1 transition hover:-translate-y-0.5", compact ? "min-h-[40px]" : "min-h-[44px]", active ? cx(priorityChipClass(p.id, isDark), "shadow-sm") : isDark ? "bg-white/5 text-slate-300 ring-white/10 hover:bg-white/10 hover:ring-violet-300/35" : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50 hover:ring-violet-300")} aria-pressed={active}>{p.title}</button>; })}</div>; }
 
-export function normalizeTaskPriority(value) {
-  return priorityOptions.some((item) => item.id === value) ? value : "medium";
-}
-export function priorityMeta(priority) {
-  return priorityOptions.find((item) => item.id === normalizeTaskPriority(priority)) || priorityOptions[1];
-}
-export function priorityChipClass(priority, isDark) {
-  const meta = priorityMeta(priority);
-  return isDark ? meta.dark : meta.light;
-}
-export function PriorityToggleGroup({ value, onChange, isDark, compact = false }) {
-  return (
-    <div className={cx("grid w-full grid-cols-2", compact ? "gap-1.5 sm:grid-cols-2" : "gap-2 sm:grid-cols-4") }>
-      {priorityOptions.map((priority) => {
-        const isActive = normalizeTaskPriority(value) === priority.id;
-        return (
-          <button
-            key={priority.id}
-            type="button"
-            onClick={() => onChange(priority.id)}
-            className={cx(
-              "min-w-0 rounded-2xl px-2 py-2 text-center text-[11px] font-black leading-tight ring-1 transition hover:-translate-y-0.5",
-              compact ? "min-h-[40px]" : "min-h-[44px]",
-              isActive
-                ? cx(priorityChipClass(priority.id, isDark), "shadow-sm")
-                : isDark
-                  ? "bg-white/5 text-slate-300 ring-white/10 hover:bg-white/10 hover:ring-violet-300/35"
-                  : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50 hover:ring-violet-300"
-            )}
-            aria-pressed={isActive}
-            title={`Ustaw priorytet: ${priority.title}`}
-          >
-            {priority.title}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+export const normalizeDashboardOrder = (order) => { if (!Array.isArray(order)) return defaultDashboardOrder; const known = order.filter((x) => defaultDashboardOrder.includes(x)); return [...known, ...defaultDashboardOrder.filter((x) => !known.includes(x))]; };
+export const normalizeDashboardSizes = (sizes) => defaultDashboardOrder.reduce((acc, id) => ({ ...acc, [id]: dashboardSizeOptions.includes(sizes?.[id]) ? sizes[id] : defaultDashboardSizes[id] }), {});
+export const normalizeActiveSection = (section) => section === "tasks" || section === "help" ? section : "info";
+export const dashboardSpanClass = (size) => dashboardSizeClasses[size] || dashboardSizeClasses.normal;
+export function reorderDashboardOrder(order, draggedId, targetId, placement = "before") { const normalized = normalizeDashboardOrder(order); if (draggedId === targetId) return normalized; const list = normalized.filter((x) => x !== draggedId); const index = list.indexOf(targetId); if (index < 0) return normalized; list.splice(placement === "after" ? index + 1 : index, 0, draggedId); return normalizeDashboardOrder(list); }
+export const clampFontScale = (value) => Math.max(85, Math.min(120, Number(value) || 100));
+export const fontScaleMultiplier = (value) => clampFontScale(value) / 100;
+export const clampNumber = (value, min, max) => Math.max(min, Math.min(max, Number(value) || 0));
+export const parseLocalDate = (dateString) => { if (!dateString) return null; const date = new Date(`${dateString}T12:00:00`); return Number.isNaN(date.getTime()) ? null : date; };
+export const dateKey = (date) => { const d = date instanceof Date && !Number.isNaN(date.getTime()) ? date : new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+export const formatDate = (dateString, options = { day: "2-digit", month: "short" }) => { const date = parseLocalDate(dateString); return date ? date.toLocaleDateString("pl-PL", options) : ""; };
+export const monthLabel = (date) => date.toLocaleDateString("pl-PL", { month: "long", year: "numeric" });
+export function buildMonthDays(monthDate) { const first = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1); const start = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1 - ((first.getDay() + 6) % 7)); return Array.from({ length: 42 }, (_, i) => { const date = new Date(start); date.setDate(start.getDate() + i); return { date, key: dateKey(date), inCurrentMonth: date.getMonth() === monthDate.getMonth(), isToday: dateKey(date) === dateKey(new Date()) }; }); }
 
-export function normalizeDashboardOrder(order) {
-  if (!Array.isArray(order)) return defaultDashboardOrder;
-  const known = order.filter((item) => defaultDashboardOrder.includes(item));
-  const missing = defaultDashboardOrder.filter((item) => !known.includes(item));
-  return [...known, ...missing];
-}
-export function normalizeDashboardSizes(sizes) {
-  return defaultDashboardOrder.reduce((acc, id) => {
-    acc[id] = dashboardSizeOptions.includes(sizes?.[id]) ? sizes[id] : defaultDashboardSizes[id];
-    return acc;
-  }, {});
-}
-export function normalizeActiveSection(section) {
-  return section === "tasks" || section === "help" ? section : "info";
-}
-export function dashboardSpanClass(size) {
-  return dashboardSizeClasses[size] || dashboardSizeClasses.normal;
-}
-export function reorderDashboardOrder(order, draggedId, targetId, placement = "before") {
-  const normalized = normalizeDashboardOrder(order);
-  if (draggedId === targetId) return normalized;
-  const withoutDragged = normalized.filter((item) => item !== draggedId);
-  const targetIndex = withoutDragged.indexOf(targetId);
-  if (targetIndex < 0) return normalized;
-  withoutDragged.splice(placement === "after" ? targetIndex + 1 : targetIndex, 0, draggedId);
-  return normalizeDashboardOrder(withoutDragged);
-}
-export function clampFontScale(value) {
-  return Math.max(85, Math.min(120, Number(value) || 100));
-}
-export function fontScaleMultiplier(value) {
-  return clampFontScale(value) / 100;
-}
-export function clampNumber(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
-// Timeline and calendar helpers
-export const timelineViewPresets = {
-  week: { label: "Tydzień", days: 7, unitLabel: "Dni", unit: "day" },
-  month: { label: "Miesiąc", days: 31, unitLabel: "Dni miesiąca", unit: "monthDay" },
-  quarter: { label: "Kwartał", days: 92, unitLabel: "Tygodnie", unit: "week" },
-  year: { label: "Rok", days: 365, unitLabel: "Miesiące", unit: "month" },
-};
-export function normalizeTimelineView(value) {
-  return timelineViewPresets[value] ? value : "month";
-}
-export function buildTimelineAxisTicks(start, preset) {
-  const ticks = [];
-  const base = new Date(start);
-  base.setHours(12, 0, 0, 0);
+export const timelineViewPresets = { week: { label: "Tydzień", days: 7, unitLabel: "Dni", unit: "day" }, month: { label: "Miesiąc", days: 31, unitLabel: "Dni miesiąca", unit: "monthDay" }, quarter: { label: "Kwartał", days: 92, unitLabel: "Tygodnie", unit: "week" }, year: { label: "Rok", days: 365, unitLabel: "Miesiące", unit: "month" } };
+export const normalizeTimelineView = (value) => timelineViewPresets[value] ? value : "month";
+export function buildTimelineAxisTicks(start, preset) { const ticks = []; const base = new Date(start); base.setHours(12, 0, 0, 0); const push = (date, label, sublabel) => ticks.push({ date, label, sublabel }); if (preset.unit === "day") { for (let i = 0; i < 7; i++) { const d = new Date(base); d.setDate(base.getDate() + i); push(d, d.toLocaleDateString("pl-PL", { weekday: "long" }), d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" })); } return ticks; } if (preset.unit === "monthDay") { for (let i = 0; i < 31; i++) { const d = new Date(base); d.setDate(base.getDate() + i); push(d, String(d.getDate()), d.toLocaleDateString("pl-PL", { month: "short" })); } return ticks; } if (preset.unit === "week") { for (let i = 0; i < 13; i++) { const d = new Date(base); d.setDate(base.getDate() + i * 7); push(d, `T${i + 1}`, d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" })); } return ticks; } for (let i = 0; i < 12; i++) { const d = new Date(base); d.setMonth(base.getMonth() + i); push(d, d.toLocaleDateString("pl-PL", { month: "short" }), String(d.getFullYear())); } return ticks; }
+export function snapDateToAxisTicks(date, ticks) { if (!date || !ticks?.length) return date ? dateKey(date) : null; const time = date.getTime(); const nearest = ticks.reduce((a, t) => Math.abs(t.date.getTime() - time) < Math.abs((a?.date || t.date).getTime() - time) ? t : a, ticks[0]); return dateKey(nearest.date); }
+export function snapDateToDateTicks(date, ticks) { if (!date || !ticks?.length) return null; const time = date.getTime(); return ticks.reduce((a, t) => Math.abs(t.getTime() - time) < Math.abs((a || t).getTime() - time) ? t : a, ticks[0]); }
+export function timelinePointerToDate(clientX, rect, rangeStart, rangeMs, offsetMs = 0) { if (!rect || !rangeMs) return null; const ratio = clampNumber((clientX - rect.left) / rect.width, 0, 1); const date = new Date(clampNumber(rangeStart.getTime() + rangeMs * ratio + offsetMs, rangeStart.getTime(), rangeStart.getTime() + rangeMs)); date.setHours(12, 0, 0, 0); return date; }
+export const dateFromTimelinePointer = (clientX, rect, start, ms) => { const d = timelinePointerToDate(clientX, rect, start, ms); return d ? dateKey(d) : null; };
+export const dateFromTimelinePointerWithOffset = (clientX, rect, start, ms, offsetMs = 0) => { const d = timelinePointerToDate(clientX, rect, start, ms, offsetMs); return d ? dateKey(d) : null; };
+export function dateFromTimelineDragDelta(startClientX, currentClientX, rect, originalDate, rangeStart, rangeMs) { if (!rect || !originalDate || !rangeMs) return null; const next = new Date(clampNumber(originalDate.getTime() + rangeMs * ((currentClientX - startClientX) / rect.width), rangeStart.getTime(), rangeStart.getTime() + rangeMs)); next.setHours(12, 0, 0, 0); return dateKey(next); }
 
-  if (preset.unit === "day") {
-    for (let index = 0; index < 7; index += 1) {
-      const date = new Date(base);
-      date.setDate(base.getDate() + index);
-      ticks.push({ date, label: date.toLocaleDateString("pl-PL", { weekday: "long" }), sublabel: date.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" }) });
-    }
-    return ticks;
-  }
+export const emptyDraft = (columnId = "todo") => ({ id: uid(), columnId, title: "", description: "", labels: [], subtasks: [], dueDate: "", priority: "medium", images: [], createdAt: Date.now() });
+export const progressOf = (task) => task?.subtasks?.length ? Math.round((task.subtasks.filter((x) => x.done).length / task.subtasks.length) * 100) : 0;
+export function getTaskImages(task) { const images = Array.isArray(task?.images) ? task.images : []; const legacy = task?.image?.dataUrl ? [task.image] : []; const seen = new Set(); return [...images, ...legacy].filter((img) => img?.dataUrl).filter((img) => { const key = img.id || img.dataUrl; if (seen.has(key)) return false; seen.add(key); return true; }); }
+export const columnForTask = (task, columns = defaultColumns) => (Array.isArray(columns) ? columns : defaultColumns).find((c) => c.id === task?.columnId) || defaultColumns[0];
+export const stageMetaForTask = columnForTask;
+export const stageGradientForTask = (task, columns = defaultColumns) => columnForTask(task, columns)?.accent || "from-slate-400 to-slate-600";
+export const stageTitleForTask = (task, columns = defaultColumns) => columnForTask(task, columns)?.title || "Bez etapu";
+export const taskTitlesForTooltip = (tasks) => Array.isArray(tasks) ? tasks.map((t) => t.title).join("\n") : "";
 
-  if (preset.unit === "monthDay") {
-    for (let index = 0; index < 31; index += 1) {
-      const date = new Date(base);
-      date.setDate(base.getDate() + index);
-      ticks.push({ date, label: String(date.getDate()), sublabel: date.toLocaleDateString("pl-PL", { month: "short" }) });
-    }
-    return ticks;
-  }
+export function buildProjectHealthTrend(tasks, columns = defaultColumns) { const all = Array.isArray(tasks) ? tasks : []; const cols = Array.isArray(columns) && columns.length ? columns : defaultColumns; const year = new Date().getFullYear(); return Array.from({ length: 12 }, (_, m) => { const start = new Date(year, m, 1, 0, 0, 0, 0); const end = new Date(year, m + 1, 0, 23, 59, 59, 999); const monthly = all.filter((task) => { const due = parseLocalDate(task?.dueDate); return due && due >= start && due <= end; }); const completed = monthly.filter((t) => t.columnId === "done" || t.archivedAt).length; const overdue = monthly.filter((t) => { const due = parseLocalDate(t?.dueDate); const now = new Date(); now.setHours(0, 0, 0, 0); return due && due < now && t.columnId !== "done" && !t.archivedAt; }).length; const avg = monthly.length ? Math.round(monthly.reduce((s, t) => s + progressOf(t), 0) / monthly.length) : 0; const donePct = monthly.length ? Math.round((completed / monthly.length) * 100) : 0; const score = monthly.length ? clampNumber(Math.round(avg * 0.55 + donePct * 0.45 - Math.min(30, Math.round((overdue / monthly.length) * 30))), 0, 100) : 0; return { key: `${year}-${String(m + 1).padStart(2, "0")}`, label: new Date(year, m, 1).toLocaleDateString("pl-PL", { month: "short" }), sublabel: String(year), score, completed, overdue, total: monthly.length, stageCounts: cols.map((c) => ({ ...c, count: monthly.filter((t) => t.columnId === c.id).length })) }; }); }
+export function buildPerformanceStats(tasks, columns = defaultColumns) { const all = Array.isArray(tasks) ? tasks : []; const cols = Array.isArray(columns) && columns.length ? columns : defaultColumns; const active = all.filter((t) => !t.archivedAt); const archived = all.filter((t) => t.archivedAt); const done = all.filter((t) => t.columnId === "done"); const subtasks = all.flatMap((t) => t.subtasks || []); const completedSubtasks = subtasks.filter((x) => x.done).length; const today = new Date(); today.setHours(0, 0, 0, 0); const seven = new Date(today); seven.setDate(today.getDate() + 7); const dated = all.filter((t) => t.dueDate); const overdue = dated.filter((t) => { const d = parseLocalDate(t.dueDate); d?.setHours(0, 0, 0, 0); return d && d < today && t.columnId !== "done" && !t.archivedAt; }); const nextSeven = dated.filter((t) => { const d = parseLocalDate(t.dueDate); d?.setHours(0, 0, 0, 0); return d && d >= today && d <= seven && !t.archivedAt; }); const archDur = archived.map((t) => t.createdAt && t.archivedAt ? Math.max(0, Math.round((t.archivedAt - t.createdAt) / 86400000)) : null).filter((x) => x !== null); return { total: all.length, active: active.length, archived: archived.length, archivedPercent: all.length ? Math.round((archived.length / all.length) * 100) : 0, done: done.length, donePercent: all.length ? Math.round((done.length / all.length) * 100) : 0, averageProgress: all.length ? Math.round(all.reduce((s, t) => s + progressOf(t), 0) / all.length) : 0, subtasks: subtasks.length, completedSubtasks, subtaskPercent: subtasks.length ? Math.round((completedSubtasks / subtasks.length) * 100) : 0, overdue: overdue.length, nextSevenDays: nextSeven.length, averageArchiveDays: archDur.length ? Math.round(archDur.reduce((s, x) => s + x, 0) / archDur.length) : null, healthTrend: buildProjectHealthTrend(all, cols), columnBreakdown: cols.map((c) => { const related = all.filter((t) => t.columnId === c.id); return { ...c, total: related.length, active: related.filter((t) => !t.archivedAt).length, archived: related.filter((t) => t.archivedAt).length, percent: all.length ? Math.round((related.length / all.length) * 100) : 0 }; }) }; }
 
-  if (preset.unit === "week") {
-    for (let index = 0; index < 13; index += 1) {
-      const date = new Date(base);
-      date.setDate(base.getDate() + index * 7);
-      ticks.push({ date, label: `T${index + 1}`, sublabel: date.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit" }) });
-    }
-    return ticks;
-  }
+export const normalizeSearchText = (v) => String(v || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+export const coerceSearchDate = (v) => { if (!v) return null; const d = typeof v === "string" && v.length === 10 && v[4] === "-" ? parseLocalDate(v) : new Date(v); return d && !Number.isNaN(d.getTime()) ? d : null; };
+export const startOfSearchDay = (v) => { const d = coerceSearchDate(v); if (!d) return null; d.setHours(0, 0, 0, 0); return d; };
+export const endOfSearchDay = (v) => { const d = coerceSearchDate(v); if (!d) return null; d.setHours(23, 59, 59, 999); return d; };
+export const buildDateSearchVariants = (v) => { const d = coerceSearchDate(v); return d ? [dateKey(d), d.toLocaleDateString("pl-PL"), d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric" }), d.toLocaleDateString("pl-PL", { day: "2-digit", month: "long", year: "numeric" }), d.toLocaleDateString("pl-PL", { month: "long", year: "numeric" })] : []; };
+export function taskMatchesArchiveDateRange(task, filters = {}) { const from = startOfSearchDay(filters.from); const to = endOfSearchDay(filters.to); if (!from && !to) return true; const due = task.dueDate ? coerceSearchDate(task.dueDate) : null; const arch = task.archivedAt ? coerceSearchDate(task.archivedAt) : null; const candidates = filters.mode === "due" ? [due] : filters.mode === "archived" ? [arch] : [due, arch]; return candidates.some((d) => d && (!from || d >= from) && (!to || d <= to)); }
+export function filterArchivedTasks(tasks, query, filters = {}) { const search = normalizeSearchText(query); return (Array.isArray(tasks) ? tasks : []).filter((t) => { const text = normalizeSearchText([t.title, t.description, t.dueDate, ...buildDateSearchVariants(t.dueDate), ...buildDateSearchVariants(t.archivedAt), t.columnId, ...(t.labels || []).map((l) => l.text), ...(t.subtasks || []).map((s) => s.text)].join(" ")); return (!search || text.includes(search)) && taskMatchesArchiveDateRange(t, filters); }); }
+export function taskMatchesTaskBoardFilters(task, filters = {}) { const search = normalizeSearchText(filters.search); const labelQuery = normalizeSearchText(filters.labelQuery); const priority = filters.priority || "all"; const from = startOfSearchDay(filters.from); const to = endOfSearchDay(filters.to); const due = task.dueDate ? coerceSearchDate(task.dueDate) : null; const text = normalizeSearchText([task.title, task.description, task.dueDate, priorityMeta(task.priority).title, ...buildDateSearchVariants(task.dueDate), ...(task.labels || []).map((l) => l.text), ...(task.subtasks || []).map((s) => s.text)].join(" ")); const labels = normalizeSearchText((task.labels || []).map((l) => l.text).join(" ")); return (!search || text.includes(search)) && (!labelQuery || labels.includes(labelQuery)) && (priority === "all" || normalizeTaskPriority(task.priority) === priority) && ((!from && !to) || Boolean(due && (!from || due >= from) && (!to || due <= to))); }
+export const filterTaskBoardTasks = (tasks, filters = {}) => (Array.isArray(tasks) ? tasks : []).filter((t) => taskMatchesTaskBoardFilters(t, filters));
+export const buildTaskImageGallery = (tasks) => (Array.isArray(tasks) ? tasks : []).flatMap((task) => getTaskImages(task).map((image, index) => ({ id: `${task.id}-${image.id || index}`, taskId: task.id, title: task.title || "Bez nazwy", description: task.description || "", dueDate: task.dueDate || "", columnId: task.columnId, archivedAt: task.archivedAt, image, imageIndex: index, imageCount: getTaskImages(task).length })));
 
-  for (let index = 0; index < 12; index += 1) {
-    const date = new Date(base);
-    date.setMonth(base.getMonth() + index);
-    ticks.push({ date, label: date.toLocaleDateString("pl-PL", { month: "short" }), sublabel: String(date.getFullYear()) });
-  }
-  return ticks;
-}
-// Core board value helpers
-export function snapDateToAxisTicks(date, axisTicks) {
-  if (!date || !axisTicks?.length) return date ? dateKey(date) : null;
-  const time = date.getTime();
-  const nearest = axisTicks.reduce((closest, tick) => {
-    const distance = Math.abs(tick.date.getTime() - time);
-    return !closest || distance < closest.distance ? { date: tick.date, distance } : closest;
-  }, null);
-  return nearest?.date ? dateKey(nearest.date) : dateKey(date);
-}
-export function snapDateToDateTicks(date, dateTicks) {
-  if (!date || !dateTicks?.length) return null;
-  const time = date.getTime();
-  return dateTicks.reduce((closest, tick) => {
-    const distance = Math.abs(tick.getTime() - time);
-    return !closest || distance < closest.distance ? { date: tick, distance } : closest;
-  }, null)?.date || null;
-}
-export function parseLocalDate(dateString) {
-  if (!dateString) return null;
-  return new Date(`${dateString}T12:00:00`);
-}
-export function dateKey(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-export function timelinePointerToDate(clientX, rect, rangeStart, rangeMs, offsetMs = 0) {
-  if (!rect || !rangeMs) return null;
-  const ratio = clampNumber((clientX - rect.left) / rect.width, 0, 1);
-  const minTime = rangeStart.getTime();
-  const maxTime = rangeStart.getTime() + rangeMs;
-  const date = new Date(clampNumber(minTime + rangeMs * ratio + offsetMs, minTime, maxTime));
-  date.setHours(12, 0, 0, 0);
-  return date;
-}
-export function dateFromTimelinePointer(clientX, rect, rangeStart, rangeMs) {
-  const date = timelinePointerToDate(clientX, rect, rangeStart, rangeMs);
-  return date ? dateKey(date) : null;
-}
-export function dateFromTimelinePointerWithOffset(clientX, rect, rangeStart, rangeMs, offsetMs = 0) {
-  const date = timelinePointerToDate(clientX, rect, rangeStart, rangeMs, offsetMs);
-  return date ? dateKey(date) : null;
-}
-export function dateFromTimelineDragDelta(startClientX, currentClientX, rect, originalDate, rangeStart, rangeMs) {
-  if (!rect || !originalDate || !rangeMs) return null;
-  const deltaRatio = (currentClientX - startClientX) / rect.width;
-  const minTime = rangeStart.getTime();
-  const maxTime = rangeStart.getTime() + rangeMs;
-  const nextTime = clampNumber(originalDate.getTime() + rangeMs * deltaRatio, minTime, maxTime);
-  const date = new Date(nextTime);
-  date.setHours(12, 0, 0, 0);
-  return dateKey(date);
-}
-export function formatDate(dateString, options = { day: "2-digit", month: "short" }) {
-  const date = parseLocalDate(dateString);
-  return date ? date.toLocaleDateString("pl-PL", options) : "";
-}
-export function progressOf(task) {
-  if (!task?.subtasks?.length) return 0;
-  return Math.round((task.subtasks.filter((item) => item.done).length / task.subtasks.length) * 100);
-}
-export function getTaskImages(task) {
-  if (Array.isArray(task?.images)) return task.images.filter(Boolean);
-  if (task?.image) return [task.image].filter(Boolean);
-  return [];
-}
-export function stageMetaForTask(task, columns = defaultColumns) {
-  return columns.find((column) => column.id === task?.columnId) || columns[0] || defaultColumns[0];
-}
-export function stageGradientForTask(task, columns = defaultColumns) {
-  return stageMetaForTask(task, columns)?.accent || "from-slate-400 to-slate-600";
-}
-export function stageTitleForTask(task, columns = defaultColumns) {
-  return stageMetaForTask(task, columns)?.title || "Bez etapu";
-}
-export function monthLabel(date) {
-  return date.toLocaleDateString("pl-PL", { month: "long", year: "numeric" });
-}
-export function buildMonthDays(monthDate) {
-  const year = monthDate.getFullYear();
-  const month = monthDate.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const startOffset = (firstDay.getDay() + 6) % 7;
-  const start = new Date(year, month, 1 - startOffset);
-  return Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(start);
-    date.setDate(start.getDate() + index);
-    return { date, key: dateKey(date), inCurrentMonth: date.getMonth() === month, isToday: dateKey(date) === dateKey(new Date()) };
-  });
-}
-export function taskTitlesForTooltip(tasks) {
-  return Array.isArray(tasks) ? tasks.map((task) => task.title).join("\n") : "";
-}
-
-// Backup helpers
-export function buildBackupPayload(state = defaultBoardState) {
-  return {
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    columns: Array.isArray(state.columns) ? state.columns : defaultColumns,
-    tasks: Array.isArray(state.tasks) ? state.tasks : [],
-    darkMode: Boolean(state.darkMode),
-    fontScale: clampFontScale(state.fontScale),
-    dashboardOrder: normalizeDashboardOrder(state.dashboardOrder),
-    dashboardSizes: normalizeDashboardSizes(state.dashboardSizes || {}),
-    activeSection: normalizeActiveSection(state.activeSection),
-  };
-}
-
-export function normalizeBackupPayload(payload = {}) {
-  const source = payload && typeof payload === "object" ? payload : {};
-  return {
-    ...defaultBoardState,
-    ...source,
-    columns: Array.isArray(source.columns) && source.columns.length ? source.columns : defaultColumns,
-    tasks: Array.isArray(source.tasks) ? source.tasks : [],
-    darkMode: typeof source.darkMode === "boolean" ? source.darkMode : defaultBoardState.darkMode,
-    fontScale: clampFontScale(source.fontScale),
-    dashboardOrder: normalizeDashboardOrder(source.dashboardOrder),
-    dashboardSizes: normalizeDashboardSizes(source.dashboardSizes || {}),
-    activeSection: normalizeActiveSection(source.activeSection),
-  };
-}
-
-export function parseBackupText(text) {
-  const raw = String(text || "").trim();
-  if (!raw) throw new Error("Plik kopii jest pusty.");
-  const parsed = JSON.parse(raw);
-  if (!parsed || typeof parsed !== "object") throw new Error("Nieprawidłowy format kopii.");
-  return normalizeBackupPayload(parsed);
-}
-
-export function readTextFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(reader.error || new Error("Nie udało się odczytać pliku."));
-    reader.readAsText(file);
-  });
-}
-
-export async function downloadTextFile(fileName, text) {
-  if (typeof window === "undefined" || typeof document === "undefined") return { ok: false, reason: "unsupported" };
-
-  try {
-    if (typeof window.showSaveFilePicker === "function") {
-      const handle = await window.showSaveFilePicker({
-        suggestedName: fileName,
-        types: [
-          {
-            description: "Kanban JSON",
-            accept: { "application/json": [".json", ".kanban.json"] },
-          },
-        ],
-      });
-      const writable = await handle.createWritable();
-      await writable.write(text);
-      await writable.close();
-      return { ok: true, fileName: handle.name || fileName };
-    }
-  } catch (error) {
-    if (error?.name === "AbortError") return { ok: false, reason: "cancelled" };
-    return { ok: false, reason: "error", error };
-  }
-
-  try {
-    const blob = new Blob([text], { type: "application/json;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = fileName;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    return { ok: true, fileName };
-  } catch (error) {
-    return { ok: false, reason: "error", error };
-  }
-}
+export function readImageAttachment(file) { return new Promise((resolve, reject) => { if (!file || !file.type?.startsWith("image/")) return reject(new Error("To nie jest plik obrazu.")); const reader = new FileReader(); reader.onerror = () => reject(new Error("Nie udało się odczytać obrazu.")); reader.onload = () => { const img = new Image(); img.onerror = () => reject(new Error("Nie udało się przygotować podglądu obrazu.")); img.onload = () => { const max = 1200; const scale = Math.min(1, max / Math.max(img.width, img.height)); const width = Math.max(1, Math.round(img.width * scale)); const height = Math.max(1, Math.round(img.height * scale)); const canvas = document.createElement("canvas"); canvas.width = width; canvas.height = height; canvas.getContext("2d").drawImage(img, 0, 0, width, height); resolve({ id: uid(), name: file.name, type: "image/jpeg", dataUrl: canvas.toDataURL("image/jpeg", 0.82), width, height }); }; img.src = reader.result; }; reader.readAsDataURL(file); }); }
+export function getImportSource(parsed) { if (Array.isArray(parsed)) return parsed; if (!parsed || typeof parsed !== "object") return null; return parsed.data && typeof parsed.data === "object" ? parsed.data : parsed.state && typeof parsed.state === "object" ? parsed.state : parsed.board && typeof parsed.board === "object" ? parsed.board : parsed; }
+export function normalizeTaskForImport(task, index = 0) { const safe = task && typeof task === "object" ? task : {}; return { ...safe, id: safe.id || uid(), columnId: typeof safe.columnId === "string" && safe.columnId.trim() ? safe.columnId : "todo", title: String(safe.title || `Zadanie ${index + 1}`), description: String(safe.description || ""), labels: (Array.isArray(safe.labels) ? safe.labels : []).map((l) => ({ id: l?.id || uid(), text: String(l?.text || ""), color: l?.color || "gray" })), subtasks: (Array.isArray(safe.subtasks) ? safe.subtasks : []).map((s) => ({ id: s?.id || uid(), text: String(s?.text || ""), done: Boolean(s?.done) })), dueDate: typeof safe.dueDate === "string" ? safe.dueDate : "", priority: normalizeTaskPriority(safe.priority), images: getTaskImages(safe), image: undefined, createdAt: Number(safe.createdAt) || Date.now(), archivedAt: safe.archivedAt ? Number(safe.archivedAt) : undefined }; }
+export function normalizeImportedColumns(columns, fallback = defaultColumns) { const base = Array.isArray(fallback) && fallback.length ? fallback : defaultColumns; const source = Array.isArray(columns) && columns.length ? columns : base; const normalized = source.map((c, i) => ({ id: typeof c?.id === "string" && c.id.trim() ? c.id : base[i]?.id || `column-${i + 1}`, title: typeof c?.title === "string" && c.title.trim() ? c.title : base[i]?.title || `Kolumna ${i + 1}`, accent: typeof c?.accent === "string" && c.accent.trim() ? c.accent : base[i]?.accent || "from-slate-400 to-slate-600" })); return normalized.length ? normalized : defaultColumns; }
+export function normalizeImportedState(parsed, fallback = defaultBoardState) { const source = getImportSource(parsed); const fallbackState = fallback || defaultBoardState; const columns = normalizeImportedColumns(source?.columns, fallbackState.columns || defaultColumns); const ids = new Set(columns.map((c) => c.id)); const rawTasks = Array.isArray(source) ? source : Array.isArray(source?.tasks) ? source.tasks : []; return { columns, tasks: rawTasks.map(normalizeTaskForImport).map((t) => ({ ...t, columnId: ids.has(t.columnId) ? t.columnId : columns[0]?.id || "todo" })), darkMode: typeof source?.darkMode === "boolean" ? source.darkMode : fallbackState.darkMode, fontScale: clampFontScale(typeof source?.fontScale === "number" ? source.fontScale : fallbackState.fontScale), dashboardOrder: normalizeDashboardOrder(source?.dashboardOrder || fallbackState.dashboardOrder), dashboardSizes: normalizeDashboardSizes(source?.dashboardSizes || fallbackState.dashboardSizes), activeSection: normalizeActiveSection(source?.activeSection || fallbackState.activeSection) }; }
+export function loadInitialState() { const fallback = defaultBoardState; if (typeof window === "undefined") return fallback; for (const key of [STORAGE_KEY, ...LEGACY_KEYS]) { const raw = safeStorageGetItem(key); if (!raw) continue; try { return normalizeImportedState(JSON.parse(raw), fallback); } catch {} } return fallback; }
+export const buildBackupPayload = (state = defaultBoardState) => ({ app: "Aesthetic Kanban Board", version: 1, exportedAt: new Date().toISOString(), data: normalizeImportedState(state, defaultBoardState) });
+export const normalizeBackupPayload = (payload = {}) => normalizeImportedState(payload, defaultBoardState);
+export function parseBackupText(text) { const raw = String(text || "").replace(/^\uFEFF/, "").trim(); if (!raw) throw new Error("Nie podano treści kopii zapasowej."); try { return JSON.parse(raw); } catch { const start = raw.indexOf("{"); const end = raw.lastIndexOf("}"); if (start >= 0 && end > start) return JSON.parse(raw.slice(start, end + 1)); throw new Error("Nie udało się odczytać pliku JSON."); } }
+export const hasImportableKanbanData = (parsed) => { const source = getImportSource(parsed); return Boolean(source && (Array.isArray(source) || Array.isArray(source.tasks))); };
+export const countImportableTasks = (parsed) => { const source = getImportSource(parsed); return Array.isArray(source) ? source.length : Array.isArray(source?.tasks) ? source.tasks.length : 0; };
+export const readTextFile = (file) => !file ? Promise.resolve("") : typeof file.text === "function" ? file.text() : new Promise((resolve, reject) => { const reader = new FileReader(); reader.onerror = () => reject(new Error("Nie udało się odczytać pliku.")); reader.onload = () => resolve(String(reader.result || "")); reader.readAsText(file, "utf-8"); });
+export async function downloadTextFile(filename, text, mimeType = "application/json") { if (typeof window === "undefined" || typeof document === "undefined") return { ok: false, reason: "no-browser" }; const safeFileName = filename || "kanban-kopia.kanban.json"; const blob = new Blob([text], { type: `${mimeType};charset=utf-8` }); if (typeof window.showSaveFilePicker === "function") { try { const handle = await window.showSaveFilePicker({ suggestedName: safeFileName, types: [{ description: "Kopia zapasowa Kanban JSON", accept: { "application/json": [".json", ".kanban.json"] } }] }); const writable = await handle.createWritable(); await writable.write(blob); await writable.close(); return { ok: true, method: "file-picker", fileName: handle.name || safeFileName }; } catch (error) { if (error?.name === "AbortError") return { ok: false, reason: "cancelled" }; return { ok: false, reason: error?.message || "blocked" }; } } try { const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = safeFileName; link.style.position = "fixed"; link.style.left = "-9999px"; document.body.appendChild(link); link.click(); setTimeout(() => { link.remove(); URL.revokeObjectURL(url); }, 1500); return { ok: true, method: "download-link", fileName: safeFileName }; } catch (error) { return { ok: false, reason: error?.message || "blocked" }; } }
+export const backupFileName = () => `kanban-kopia-${new Date().toISOString().slice(0, 10)}.kanban.json`;
+export function runSelfTests() { console.assert(Array.isArray(defaultTasks) && defaultTasks.length === 0, "Default tasks should be empty."); console.assert(typeof buildPerformanceStats === "function", "Performance stats helper should exist."); }
