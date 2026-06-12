@@ -90,17 +90,17 @@ export function StartupDatabaseGate() {
     : isDark
       ? "border-amber-300/20 bg-amber-300/10 text-amber-100"
       : "border-amber-200 bg-amber-50 text-amber-900";
-  const iconTile = isDark
-    ? "border-white/10 bg-white/5 text-slate-100"
-    : "border-slate-200 bg-slate-50 text-slate-700";
-  const iconTileActive = fileSystemSupported
+  const heroMarkTheme = isDark
+    ? "bg-white/[0.035] ring-white/10"
+    : "bg-slate-100/80 ring-slate-200";
+  const heroAccentTheme = fileSystemSupported
     ? isDark
-      ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-100"
-      : "border-emerald-200 bg-emerald-50 text-emerald-800"
+      ? "bg-emerald-400/10 text-emerald-100 ring-emerald-400/25"
+      : "bg-emerald-50 text-emerald-800 ring-emerald-200"
     : isDark
-      ? "border-amber-300/25 bg-amber-300/10 text-amber-100"
-      : "border-amber-200 bg-amber-50 text-amber-900";
-  const infographicLine = isDark ? "bg-white/10" : "bg-slate-200";
+      ? "bg-amber-300/10 text-amber-100 ring-amber-300/25"
+      : "bg-amber-50 text-amber-900 ring-amber-200";
+  const heroMutedIcon = isDark ? "text-slate-500" : "text-slate-400";
 
   useEffect(() => {
     setFileSystemSupported(isFileSystemAccessSupported());
@@ -276,17 +276,12 @@ export function StartupDatabaseGate() {
           </button>
 
           <header className="mb-7 flex flex-col items-center gap-4 px-14 text-center">
-            <div className="flex items-center justify-center gap-3" aria-hidden="true">
-              <span className={cx("flex h-12 w-12 items-center justify-center rounded-3xl border", iconTile)}>
-                <Database size={20} />
-              </span>
-              <span className={cx("h-px w-8", infographicLine)} />
-              <span className={cx("flex h-16 w-16 items-center justify-center rounded-[1.4rem] border shadow-sm", iconTileActive)}>
+            <div className="pointer-events-none relative flex h-20 w-32 items-center justify-center" aria-hidden="true">
+              <div className={cx("absolute inset-x-3 top-2 h-16 rounded-[2rem] ring-1", heroMarkTheme)} />
+              <Database className={cx("absolute left-2 top-7", heroMutedIcon)} size={20} />
+              <HardDrive className={cx("absolute right-2 top-7", heroMutedIcon)} size={20} />
+              <span className={cx("relative flex h-14 w-14 items-center justify-center rounded-[1.35rem] ring-1 shadow-sm", heroAccentTheme)}>
                 <ShieldCheck size={26} />
-              </span>
-              <span className={cx("h-px w-8", infographicLine)} />
-              <span className={cx("flex h-12 w-12 items-center justify-center rounded-3xl border", iconTile)}>
-                <HardDrive size={20} />
               </span>
             </div>
 
