@@ -14,10 +14,14 @@ import {
   theme,
 } from "../shared.jsx";
 import {
+  clearKanbanBrowserStorage,
   installBrowserPersistenceGuard,
   isBrowserPersistenceDisabled,
 } from "../security/browserStoragePolicy.js";
-import { getActiveFileDatabaseSummary } from "../security/fileDatabaseStorage.js";
+import {
+  closeActiveFileDatabaseSession,
+  getActiveFileDatabaseSummary,
+} from "../security/fileDatabaseStorage.js";
 
 const STATUS_TOAST_TIMEOUT_MS = 4200;
 
@@ -136,6 +140,9 @@ export function SecurityDatabaseLauncher() {
   const launcherButtonTheme = themeMode === "dark"
     ? "border-violet-300/40 bg-slate-950/85 text-white hover:bg-slate-900"
     : "border-violet-200 bg-white/90 text-slate-800 shadow-violet-200/40 hover:bg-violet-50";
+  const lockButtonTheme = themeMode === "dark"
+    ? "border-rose-300/40 bg-rose-950/85 text-rose-50 hover:bg-rose-900"
+    : "border-rose-200 bg-rose-50/95 text-rose-800 shadow-rose-100/60 hover:bg-rose-100";
   const statusCopy = getStatusCopy(databaseStatus);
   const StatusIcon = statusCopy.icon;
   const statusTheme = themeMode === "dark"
@@ -192,6 +199,7 @@ export function SecurityDatabaseLauncher() {
       "kanban-file-database-applied",
       "kanban-file-database-saved",
       "kanban-file-database-save-error",
+      "kanban-file-database-closed",
       "kanban-browser-persistence-changed",
       "kanban-imported",
     ];
@@ -224,6 +232,24 @@ export function SecurityDatabaseLauncher() {
     setOpen(true);
   }
 
+  function lockDatabaseSession() {
+    const confirmed = window.confirm(
+      "Zablokować zaszyfrowaną bazę? Aplikacja usunie hasło z pamięci strony, wyczyści starą kopię przeglądarkową i przeładuje widok. Upewnij się, że ostatni zapis do pliku zakończył się poprawnie."
+    );
+    if (!confirmed) return;
+
+    closeActiveFileDatabaseSession();
+    clearKanbanBrowserStorage(STORAGE_KEY, LEGACY_KEYS);
+    setOpen(false);
+    setDatabaseStatus(buildDatabaseStatus({ lastError: "" }));
+    setStatusVisible(true);
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("kanban-file-database-closed"));
+      window.setTimeout(() => window.location.reload(), 250);
+    }
+  }
+
   return (
     <>
       {statusVisible && !open && (
@@ -243,6 +269,21 @@ export function SecurityDatabaseLauncher() {
               <div className="mt-0.5 line-clamp-2 text-[11px] font-semibold opacity-80">{statusCopy.detail}</div>
             </div>
           </div>
+        </button>
+      )}
+
+      {databaseStatus.session?.active && !open && (
+        <button
+          type="button"
+          onClick={lockDatabaseSession}
+          className={cx(
+            "fixed bottom-4 right-28 z-50 inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-xs font-black shadow-2xl backdrop-blur-2xl transition hover:-translate-y-0.5",
+            lockButtonTheme
+          )}
+          title="Zablokuj zaszyfrowaną bazę i wyczyść widok"
+        >
+          <ShieldCheck size={16} />
+          <span>Zablokuj</span>
         </button>
       )}
 
