@@ -20,47 +20,23 @@ function encryptedBackupFileName(fileName = "kanban-kopia.json") {
   return String(fileName).replace(/\.json$/i, "-zaszyfrowana.kanban.json");
 }
 
-function ModalHeader({ t, icon, title, hint, children }) {
+function ModalHeader({ t, icon, title, hint }) {
   return (
-    <div className="mb-5 flex items-start justify-between gap-4">
-      <div className="flex min-w-0 items-start gap-3">
-        <span className={cx("flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ring-1", t.chip)}>
-          {icon}
-        </span>
-        <div className="min-w-0">
-          <h2 className="text-xl font-black tracking-tight">{title}</h2>
-          {hint && <p className={cx("mt-1 text-xs font-semibold leading-5", t.textMuted)}>{hint}</p>}
-          {children}
-        </div>
+    <div className="mb-5 flex min-w-0 items-start gap-3">
+      <span className={cx("flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ring-1", t.chip)}>
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <h2 className="text-xl font-black tracking-tight">{title}</h2>
+        {hint && <p className={cx("mt-1 text-xs font-semibold leading-5", t.textMuted)}>{hint}</p>}
       </div>
     </div>
   );
 }
 
-function IconFlow({ t, items }) {
+function ActionCard({ t, icon, title, subtitle, children, muted = false, className = "" }) {
   return (
-    <div className="mb-4 flex items-center gap-2" aria-hidden="true">
-      {items.map((item, index) => (
-        <React.Fragment key={item.label}>
-          <span
-            className={cx(
-              "flex h-9 w-9 items-center justify-center rounded-2xl border text-xs",
-              index === 1 ? t.successButton : t.buttonSoft
-            )}
-            title={item.label}
-          >
-            {item.icon}
-          </span>
-          {index < items.length - 1 && <span className={cx("h-px w-7", t.divider.replace("border", "bg"))} />}
-        </React.Fragment>
-      ))}
-    </div>
-  );
-}
-
-function ActionCard({ t, icon, title, subtitle, children, muted = false }) {
-  return (
-    <section className={cx("rounded-3xl border p-4", muted ? t.buttonSoft : t.cardSolid)}>
+    <section className={cx("rounded-3xl border p-4", muted ? t.buttonSoft : t.cardSolid, className)}>
       <div className="mb-3 flex items-start gap-3">
         <span className={cx("flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ring-1", t.chip)}>
           {icon}
@@ -80,6 +56,16 @@ function Notice({ t, children }) {
 
   return (
     <div className={cx("mb-4 rounded-2xl border px-4 py-3 text-xs font-bold leading-5", t.buttonSoft)}>
+      {children}
+    </div>
+  );
+}
+
+function InlineNotice({ t, children }) {
+  if (!children) return null;
+
+  return (
+    <div className={cx("mt-3 rounded-2xl border px-3 py-2 text-xs font-bold leading-5", t.buttonSoft)}>
       {children}
     </div>
   );
@@ -222,32 +208,36 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose, onDo
     <AnimatePresence>
       {open && (
         <motion.div className={cx("fixed inset-0 z-40 flex items-center justify-center p-4 backdrop-blur-sm", t.overlay)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={onClose}>
-          <motion.div className={cx("max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-[2rem] border p-5 shadow-2xl sm:p-6", t.modal)} initial={{ scale: 0.96, y: 20, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.96, y: 20, opacity: 0 }} onMouseDown={(event) => event.stopPropagation()}>
-            <div className="flex items-start justify-between gap-4">
+          <motion.div className={cx("max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[2rem] border p-5 shadow-2xl sm:p-6", t.modal)} initial={{ scale: 0.96, y: 20, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.96, y: 20, opacity: 0 }} onMouseDown={(event) => event.stopPropagation()}>
+            <div className="mb-1 flex items-start justify-between gap-4">
               <ModalHeader
                 t={t}
                 icon={<Upload size={18} />}
                 title="Eksport"
-                hint="Zapisz kopię tablicy. Dla danych firmowych wybierz wariant szyfrowany."
-              >
-                <IconFlow
-                  t={t}
-                  items={[
-                    { label: "Dane", icon: <BookOpen size={15} /> },
-                    { label: "Szyfrowanie", icon: <ShieldCheck size={15} /> },
-                    { label: "Plik", icon: <Upload size={15} /> },
-                  ]}
-                />
-              </ModalHeader>
+                hint="Zapisz kopię tablicy. Dla pracy służbowej wybierz plik szyfrowany."
+              />
               <button type="button" onClick={onClose} className={cx("rounded-2xl p-2 transition", t.hoverSoft, t.textMuted)}><X /></button>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className={cx("mb-4 flex flex-wrap items-center gap-2 border-b pb-4", t.divider)}>
+              <span className={cx("rounded-full border px-3 py-1 text-[11px] font-black", t.successButton)}>
+                Zalecane: szyfrowany
+              </span>
+              <span className={cx("rounded-full border px-3 py-1 text-[11px] font-bold", t.buttonSoft)}>
+                JSON: awaryjnie
+              </span>
+              <span className={cx("min-w-0 truncate text-[11px] font-semibold", t.textSoft)} title={fileName}>
+                {fileName}
+              </span>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[1fr_18rem]">
               <ActionCard
                 t={t}
                 icon={<ShieldCheck size={18} />}
-                title="Zaszyfrowany plik"
-                subtitle="Zalecane do codziennego użycia."
+                title="Plik szyfrowany"
+                subtitle="Hasło + pobranie zaszyfrowanej bazy."
+                className="min-w-0"
               >
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="grid gap-1 text-xs font-black">
@@ -279,22 +269,22 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose, onDo
                   </label>
                 </div>
 
-                {encryptionNotice && <div className={cx("mt-3 rounded-2xl border px-3 py-2 text-xs font-bold leading-5", t.buttonSoft)}>{encryptionNotice}</div>}
+                <InlineNotice t={t}>{encryptionNotice}</InlineNotice>
 
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   <button
                     type="button"
                     onClick={handleEncryptedDownloadClick}
                     disabled={encrypting}
-                    className={cx("inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.actionPrimary)}
+                    className={cx("inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.actionPrimary)}
                   >
-                    <ShieldCheck size={15} /> {encrypting ? "Szyfruję..." : "Pobierz szyfrowany"}
+                    <ShieldCheck size={15} /> {encrypting ? "Szyfruję..." : "Pobierz"}
                   </button>
                   <button
                     type="button"
                     onClick={copyEncryptedBackupText}
                     disabled={encrypting}
-                    className={cx("inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.buttonSoft)}
+                    className={cx("inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.buttonSoft)}
                   >
                     {encryptedCopied ? <CheckCircle2 size={15} /> : <BookOpen size={15} />} {encryptedCopied ? "Skopiowano" : "Kopiuj"}
                   </button>
@@ -316,31 +306,31 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose, onDo
               <ActionCard
                 t={t}
                 icon={<BookOpen size={18} />}
-                title="Zwykły JSON"
-                subtitle="Awaryjnie albo do migracji."
+                title="JSON"
+                subtitle="Tylko awaryjnie."
                 muted
+                className="min-w-0"
               >
-                <p className={cx("mb-3 truncate text-xs font-semibold", t.textSoft)}>{fileName}</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid gap-2">
                   <button
                     type="button"
                     onClick={copyBackupText}
-                    className={cx("inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5", t.buttonSoft)}
+                    className={cx("inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5", t.buttonSoft)}
                   >
-                    {copied ? <CheckCircle2 size={15} /> : <BookOpen size={15} />} {copied ? "Skopiowano" : "Kopiuj JSON"}
+                    {copied ? <CheckCircle2 size={15} /> : <BookOpen size={15} />} {copied ? "Skopiowano" : "Kopiuj"}
                   </button>
                   <button
                     type="button"
                     onClick={handleDownloadClick}
-                    className={cx("inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5", t.buttonSoft)}
+                    className={cx("inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5", t.buttonSoft)}
                   >
-                    <Upload size={15} /> Pobierz JSON
+                    <Upload size={15} /> Pobierz
                   </button>
                 </div>
 
-                {downloadNotice && <div className={cx("mt-3 rounded-2xl border px-3 py-2 text-xs font-bold leading-5", t.buttonSoft)}>{downloadNotice}</div>}
+                <InlineNotice t={t}>{downloadNotice}</InlineNotice>
 
-                <TextPreview t={t} label="Pokaż treść JSON">
+                <TextPreview t={t} label="Pokaż JSON">
                   <textarea
                     ref={textareaRef}
                     value={backupText}
@@ -352,10 +342,6 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose, onDo
                 </TextPreview>
               </ActionCard>
             </div>
-
-            <p className={cx("mt-4 border-t pt-4 text-[11px] font-semibold leading-5", t.divider, t.textSoft)}>
-              Skrót: plik szyfrowany do normalnej pracy, JSON tylko awaryjnie.
-            </p>
           </motion.div>
         </motion.div>
       )}
@@ -537,16 +523,7 @@ export function ImportBackupModal({ t, open, onClose, onImportText, onImportFile
                 icon={<RotateCcw size={18} />}
                 title="Import"
                 hint="Wybierz plik lub wklej treść. Zaszyfrowane bazy wymagają hasła."
-              >
-                <IconFlow
-                  t={t}
-                  items={[
-                    { label: "Plik", icon: <Upload size={15} /> },
-                    { label: "Sprawdzenie", icon: <ShieldCheck size={15} /> },
-                    { label: "Wczytanie", icon: <CheckCircle2 size={15} /> },
-                  ]}
-                />
-              </ModalHeader>
+              />
               <button type="button" onClick={onClose} className={cx("rounded-2xl p-2 transition", t.hoverSoft, t.textMuted)}><X /></button>
             </div>
 
