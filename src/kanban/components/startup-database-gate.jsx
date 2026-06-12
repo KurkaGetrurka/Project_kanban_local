@@ -72,12 +72,9 @@ export function StartupDatabaseGate() {
   const shellTheme = isDark
     ? "border-white/10 bg-slate-950/96 shadow-black/30"
     : "border-slate-200 bg-white shadow-slate-200/70";
-  const mainPanelTheme = isDark
-    ? "border-white/10 bg-white/[0.035]"
-    : "border-slate-200 bg-slate-50/70";
-  const secondaryPanelTheme = isDark
-    ? "border-white/10 bg-transparent hover:bg-white/[0.035]"
-    : "border-slate-200 bg-white hover:bg-slate-50";
+  const actionPanelTheme = isDark
+    ? "border-white/10 bg-white/[0.025] hover:bg-white/[0.045]"
+    : "border-slate-200 bg-white hover:bg-slate-50/80";
   const mutedText = isDark ? "text-slate-300" : "text-slate-600";
   const softText = isDark ? "text-slate-500" : "text-slate-400";
   const inputTheme = isDark
@@ -93,6 +90,17 @@ export function StartupDatabaseGate() {
     : isDark
       ? "border-amber-300/20 bg-amber-300/10 text-amber-100"
       : "border-amber-200 bg-amber-50 text-amber-900";
+  const iconTile = isDark
+    ? "border-white/10 bg-white/5 text-slate-100"
+    : "border-slate-200 bg-slate-50 text-slate-700";
+  const iconTileActive = fileSystemSupported
+    ? isDark
+      ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-100"
+      : "border-emerald-200 bg-emerald-50 text-emerald-800"
+    : isDark
+      ? "border-amber-300/25 bg-amber-300/10 text-amber-100"
+      : "border-amber-200 bg-amber-50 text-amber-900";
+  const infographicLine = isDark ? "bg-white/10" : "bg-slate-200";
 
   useEffect(() => {
     setFileSystemSupported(isFileSystemAccessSupported());
@@ -256,7 +264,7 @@ export function StartupDatabaseGate() {
 
   return (
     <div className={cx("fixed inset-0 z-[80] overflow-y-auto p-4 sm:p-6", pageTheme)}>
-      <div className="mx-auto flex min-h-full w-full max-w-5xl items-center justify-center">
+      <div className="mx-auto flex min-h-full w-full max-w-6xl items-center justify-center">
         <div className={cx("relative w-full rounded-[1.75rem] border p-5 shadow-2xl sm:p-8", shellTheme)}>
           <button
             type="button"
@@ -267,15 +275,30 @@ export function StartupDatabaseGate() {
             <X size={14} /> Pomiń
           </button>
 
-          <header className="mb-8 max-w-2xl pr-24">
-            <div className={cx("mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em]", statusPill)}>
-              <ShieldCheck size={13} />
-              {fileSystemSupported ? "Tryb plikowy dostępny" : "Wymagany Chrome / Edge"}
+          <header className="mb-7 flex flex-col items-center gap-4 px-14 text-center">
+            <div className="flex items-center justify-center gap-3" aria-hidden="true">
+              <span className={cx("flex h-12 w-12 items-center justify-center rounded-3xl border", iconTile)}>
+                <Database size={20} />
+              </span>
+              <span className={cx("h-px w-8", infographicLine)} />
+              <span className={cx("flex h-16 w-16 items-center justify-center rounded-[1.4rem] border shadow-sm", iconTileActive)}>
+                <ShieldCheck size={26} />
+              </span>
+              <span className={cx("h-px w-8", infographicLine)} />
+              <span className={cx("flex h-12 w-12 items-center justify-center rounded-3xl border", iconTile)}>
+                <HardDrive size={20} />
+              </span>
             </div>
-            <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Wybierz bazę</h1>
-            <p className={cx("mt-3 text-sm font-medium leading-6", mutedText)}>
-              Pracuj na zaszyfrowanym pliku. Hasło zostaje tylko w pamięci strony, a zmiany zapisują się do wybranego pliku roboczego.
-            </p>
+
+            <div className="grid gap-2">
+              <div className={cx("mx-auto inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em]", statusPill)}>
+                <ShieldCheck size={13} />
+                {fileSystemSupported ? "Tryb plikowy dostępny" : "Wymagany Chrome / Edge"}
+              </div>
+              <p className={cx("mx-auto max-w-xl text-xs font-semibold leading-5", mutedText)}>
+                Wybierz zaszyfrowany plik bazy albo utwórz nowy. Hasło zostaje tylko w pamięci strony.
+              </p>
+            </div>
           </header>
 
           {notice && (
@@ -284,122 +307,127 @@ export function StartupDatabaseGate() {
             </div>
           )}
 
-          <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-            <section className={cx("rounded-[1.5rem] border p-5 sm:p-6", mainPanelTheme)}>
-              <div className="mb-5 flex items-start gap-3">
+          <div className="grid gap-4 lg:grid-cols-3">
+            <section className={cx("flex min-h-[22rem] flex-col rounded-[1.5rem] border p-5 transition", actionPanelTheme)}>
+              <div className="mb-4 flex items-start gap-3">
                 <span className={cx("flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ring-1", t.chip)}>
-                  <HardDrive size={19} />
+                  <HardDrive size={18} />
                 </span>
                 <div>
-                  <h2 className="text-lg font-black">Otwórz istniejącą bazę</h2>
+                  <h2 className="text-sm font-black">Otwórz bazę</h2>
                   <p className={cx("mt-1 text-xs font-semibold leading-5", mutedText)}>
-                    Najczęstszy wybór przy codziennej pracy.
+                    Codzienna praca na istniejącym pliku.
                   </p>
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+              <div className="grid gap-3">
                 <label className="grid gap-1.5 text-xs font-black">
-                  Hasło do bazy
+                  Hasło
                   <input
                     type="password"
                     value={openPassword}
                     onChange={(event) => setOpenPassword(event.target.value)}
-                    className={cx("rounded-2xl border px-3 py-3 text-sm outline-none ring-violet-300 transition focus:ring-4", inputTheme)}
+                    className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", inputTheme)}
                     placeholder="Hasło pliku roboczego"
                   />
                 </label>
-                <button
-                  type="button"
-                  onClick={openExistingEncryptedDatabase}
-                  disabled={busy || !fileSystemSupported}
-                  className={cx("inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-xs font-black shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.actionPrimary)}
-                >
-                  <HardDrive size={15} /> {busy ? "Otwieram..." : "Otwórz plik"}
-                </button>
               </div>
 
-              <p className={cx("mt-4 text-xs font-semibold leading-5", softText)}>
+              <p className={cx("mt-3 text-xs font-semibold leading-5", softText)}>
                 Po otwarciu pliku aplikacja zatrzyma zapis do localStorage w tej sesji.
               </p>
+
+              <button
+                type="button"
+                onClick={openExistingEncryptedDatabase}
+                disabled={busy || !fileSystemSupported}
+                className={cx("mt-auto inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", secondaryButton)}
+              >
+                <HardDrive size={15} /> {busy ? "Otwieram..." : "Otwórz plik"}
+              </button>
             </section>
 
-            <div className="grid gap-5">
-              <section className={cx("rounded-[1.5rem] border p-5 transition", secondaryPanelTheme)}>
-                <div className="mb-4 flex items-start gap-3">
-                  <span className={cx("flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ring-1", t.chip)}>
-                    <Plus size={18} />
-                  </span>
-                  <div>
-                    <h2 className="text-sm font-black">Nowa baza</h2>
-                    <p className={cx("mt-1 text-xs font-semibold leading-5", mutedText)}>
-                      Pusta tablica w nowym zaszyfrowanym pliku.
-                    </p>
-                  </div>
+            <section className={cx("flex min-h-[22rem] flex-col rounded-[1.5rem] border p-5 transition", actionPanelTheme)}>
+              <div className="mb-4 flex items-start gap-3">
+                <span className={cx("flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ring-1", t.chip)}>
+                  <Plus size={18} />
+                </span>
+                <div>
+                  <h2 className="text-sm font-black">Nowa baza</h2>
+                  <p className={cx("mt-1 text-xs font-semibold leading-5", mutedText)}>
+                    Pusta tablica w nowym zaszyfrowanym pliku.
+                  </p>
                 </div>
+              </div>
 
-                <div className="grid gap-3">
-                  <label className="grid gap-1.5 text-xs font-black">
-                    Hasło
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(event) => setNewPassword(event.target.value)}
-                      className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", inputTheme)}
-                      placeholder="Minimum 8 znaków"
-                    />
-                  </label>
-                  <label className="grid gap-1.5 text-xs font-black">
-                    Powtórz hasło
-                    <input
-                      type="password"
-                      value={newPasswordRepeat}
-                      onChange={(event) => setNewPasswordRepeat(event.target.value)}
-                      className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", inputTheme)}
-                      placeholder="To samo hasło"
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={createNewEncryptedDatabase}
-                    disabled={busy || !fileSystemSupported}
-                    className={cx("inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", secondaryButton)}
-                  >
-                    <Database size={15} /> {busy ? "Tworzę..." : "Utwórz plik"}
-                  </button>
+              <div className="grid gap-3">
+                <label className="grid gap-1.5 text-xs font-black">
+                  Hasło
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", inputTheme)}
+                    placeholder="Minimum 8 znaków"
+                  />
+                </label>
+                <label className="grid gap-1.5 text-xs font-black">
+                  Powtórz hasło
+                  <input
+                    type="password"
+                    value={newPasswordRepeat}
+                    onChange={(event) => setNewPasswordRepeat(event.target.value)}
+                    className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", inputTheme)}
+                    placeholder="To samo hasło"
+                  />
+                </label>
+              </div>
+
+              <button
+                type="button"
+                onClick={createNewEncryptedDatabase}
+                disabled={busy || !fileSystemSupported}
+                className={cx("mt-auto inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", secondaryButton)}
+              >
+                <Database size={15} /> {busy ? "Tworzę..." : "Utwórz plik"}
+              </button>
+            </section>
+
+            <section className={cx("flex min-h-[22rem] flex-col rounded-[1.5rem] border p-5 transition", actionPanelTheme)}>
+              <div className="mb-4 flex items-start gap-3">
+                <span className={cx("flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ring-1", t.chip)}>
+                  <Upload size={18} />
+                </span>
+                <div>
+                  <h2 className="text-sm font-black">Import JSON</h2>
+                  <p className={cx("mt-1 text-xs font-semibold leading-5", mutedText)}>
+                    Dla starej kopii. Potem zapisz ją jako zaszyfrowaną bazę.
+                  </p>
                 </div>
-              </section>
+              </div>
 
-              <section className={cx("rounded-[1.5rem] border p-5 transition", secondaryPanelTheme)}>
-                <div className="mb-4 flex items-start gap-3">
-                  <span className={cx("flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ring-1", t.chip)}>
-                    <Upload size={18} />
-                  </span>
-                  <div>
-                    <h2 className="text-sm font-black">Import JSON</h2>
-                    <p className={cx("mt-1 text-xs font-semibold leading-5", mutedText)}>
-                      Dla starej kopii. Potem zapisz ją jako zaszyfrowaną bazę.
-                    </p>
-                  </div>
-                </div>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json,.json,.kanban.json"
+                className="hidden"
+                onChange={(event) => importLegacyBackupFile(event.target.files?.[0])}
+              />
 
-                <input
-                  ref={importInputRef}
-                  type="file"
-                  accept="application/json,.json,.kanban.json"
-                  className="hidden"
-                  onChange={(event) => importLegacyBackupFile(event.target.files?.[0])}
-                />
-                <button
-                  type="button"
-                  onClick={() => importInputRef.current?.click()}
-                  disabled={busy}
-                  className={cx("inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", secondaryButton)}
-                >
-                  <Upload size={15} /> Importuj kopię
-                </button>
-              </section>
-            </div>
+              <p className={cx("text-xs font-semibold leading-5", softText)}>
+                Użyj tylko przy migracji ze starej, niezabezpieczonej kopii. Po imporcie wejdź w panel „Baza” i zapisz plik szyfrowany.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => importInputRef.current?.click()}
+                disabled={busy}
+                className={cx("mt-auto inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", secondaryButton)}
+              >
+                <Upload size={15} /> Importuj kopię
+              </button>
+            </section>
           </div>
 
           <footer className={cx("mt-6 flex flex-col gap-2 border-t pt-4 text-[11px] font-semibold leading-5 sm:flex-row sm:items-center sm:justify-between", isDark ? "border-white/10" : "border-slate-200", softText)}>
