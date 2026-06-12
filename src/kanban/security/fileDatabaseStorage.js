@@ -64,6 +64,60 @@ export async function saveEncryptedDatabaseFile({ suggestedName = "kanban-baza.k
   }
 }
 
+export async function createEncryptedDatabaseSession({
+  data,
+  password,
+  suggestedName = "kanban-baza.kanban.json",
+}) {
+  const nextPassword = String(password || "").trim();
+  if (!nextPassword) {
+    throw new Error("Podaj hasło do nowej zaszyfrowanej bazy.");
+  }
+
+  if (!data) {
+    throw new Error("Brak danych do utworzenia nowej bazy.");
+  }
+
+  if (!isFileSystemAccessSupported()) {
+    return { ok: false, reason: "unsupported" };
+  }
+
+  try {
+    const handle = await window.showSaveFilePicker({
+      suggestedName,
+      types: encryptedKanbanFileTypes(),
+      excludeAcceptAllOption: false,
+    });
+
+    const envelope = await encryptKanbanDatabase(data, nextPassword);
+    const text = JSON.stringify(envelope, null, 2);
+    await writeEncryptedTextToHandle(handle, text);
+
+    activeFileDatabaseSession = {
+      handle,
+      fileName: handle.name || suggestedName,
+      password: nextPassword,
+      openedAt: new Date().toISOString(),
+      lastSavedAt: new Date().toISOString(),
+    };
+    setLiveBoardSnapshot(data);
+
+    return {
+      ok: true,
+      method: "new-file-session",
+      fileName: activeFileDatabaseSession.fileName,
+      payload: data,
+      session: getActiveFileDatabaseSummary(),
+    };
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      return { ok: false, reason: "cancelled" };
+    }
+
+    throw new Error(error?.message || "Nie udało się utworzyć nowej zaszyfrowanej bazy.");
+  }
+}
+
 export async function openEncryptedDatabaseFile() {
   if (!isFileSystemAccessSupported()) {
     return { ok: false, reason: "unsupported" };
