@@ -36,6 +36,29 @@ function formatSessionTime(value) {
   }
 }
 
+function SectionIntro({ t, icon, title, children }) {
+  return (
+    <div className="mb-4 flex items-start gap-3">
+      <span className={cx("mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ring-1", t.chip)}>
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <h3 className="text-sm font-black">{title}</h3>
+        {children && <p className={cx("mt-1 text-xs font-semibold leading-5", t.textSoft)}>{children}</p>}
+      </div>
+    </div>
+  );
+}
+
+function StatusLine({ t, label, value, strong = false }) {
+  return (
+    <div className={cx("grid gap-1 py-2.5 text-xs sm:grid-cols-[12rem_1fr] sm:gap-4", t.divider)}>
+      <dt className={cx("font-black", t.textSoft)}>{label}</dt>
+      <dd className={cx("font-semibold leading-5", strong ? "" : t.textMuted)}>{value}</dd>
+    </div>
+  );
+}
+
 export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }) {
   const [password, setPassword] = useState("");
   const [passwordRepeat, setPasswordRepeat] = useState("");
@@ -58,6 +81,10 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
       legacyCount: LEGACY_KEYS.length,
     };
   }, []);
+
+  const panelClass = cx("rounded-[1.5rem] border p-4 sm:p-5", t.cardSolid);
+  const subtleInfoClass = cx("rounded-2xl px-3 py-2 text-xs font-semibold leading-5", t.subtle);
+  const quietButtonClass = cx("inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.buttonSoft);
 
   useEffect(() => {
     if (!open) return;
@@ -307,13 +334,13 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
             onMouseDown={(event) => event.stopPropagation()}
           >
             <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <div className={cx("mb-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black shadow-sm", t.buttonPrimary)}>
-                  <ShieldCheck size={14} /> Bezpieczeństwo bazy
+              <div className="min-w-0">
+                <div className={cx("mb-3 flex h-11 w-11 items-center justify-center rounded-2xl ring-1", t.chip)}>
+                  <ShieldCheck size={20} />
                 </div>
-                <h2 className="text-2xl font-black">Baza Kanbana</h2>
-                <p className={cx("mt-1 text-sm leading-6", t.textMuted)}>
-                  Ten panel służy do migracji starych danych oraz pracy na zaszyfrowanym pliku bazy. Hasło bazy nie jest zapisywane w przeglądarce.
+                <h2 className="text-2xl font-black tracking-tight">Baza Kanbana</h2>
+                <p className={cx("mt-1 max-w-2xl text-sm leading-6", t.textMuted)}>
+                  Zarządzanie zaszyfrowanym plikiem roboczym i migracją starego zapisu z przeglądarki.
                 </p>
               </div>
               <button type="button" onClick={onClose} className={cx("rounded-2xl p-2 transition", t.hoverSoft, t.textMuted)}>
@@ -322,74 +349,49 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
             </div>
 
             {notice && (
-              <div className={cx("mb-4 rounded-3xl border px-4 py-3 text-xs font-bold leading-5", t.buttonSoft)}>
+              <div className={cx("mb-4 rounded-2xl px-4 py-3 text-xs font-bold leading-5", t.subtle)}>
                 {notice}
               </div>
             )}
 
-            <section className={cx("mb-4 rounded-3xl border p-4", t.cardSolid)}>
-              <div className="mb-3 flex items-center gap-3">
-                <span className={cx("flex h-10 w-10 items-center justify-center rounded-2xl ring-1", t.chip)}>
-                  <Database size={18} />
-                </span>
-                <div>
-                  <h3 className="text-sm font-black">1. Status zapisu</h3>
-                  <p className={cx("text-xs font-semibold", t.textSoft)}>
-                    Sprawdzam główny klucz bazy, {storageSummary.legacyCount} starsze klucze migracyjne i aktywną sesję pliku.
-                  </p>
-                </div>
-              </div>
+            <section className={cx("mb-4", panelClass)}>
+              <SectionIntro t={t} icon={<Database size={17} />} title="Status">
+                Krótki podgląd tego, gdzie aktualnie znajduje się baza i czy przeglądarka nadal przechowuje kopię.
+              </SectionIntro>
 
-              <div className="grid gap-3 sm:grid-cols-4">
-                <div className={cx("rounded-2xl border p-3 text-xs leading-5", t.buttonSoft)}>
-                  <p className="font-black">Kopia w localStorage</p>
-                  <p className={cx("mt-1", t.textMuted)}>
-                    {storageCopyDetected ? "Wykryto dane zapisane w przeglądarce." : "Nie wykryto danych w znanych kluczach localStorage."}
-                  </p>
-                </div>
-                <div className={cx("rounded-2xl border p-3 text-xs leading-5", t.buttonSoft)}>
-                  <p className="font-black">Zapis do localStorage</p>
-                  <p className={cx("mt-1", t.textMuted)}>
-                    {browserPersistenceDisabled ? "Zatrzymany w tej sesji." : "Aktywny, jeśli nie ma sesji plikowej."}
-                  </p>
-                </div>
-                <div className={cx("rounded-2xl border p-3 text-xs leading-5", t.buttonSoft)}>
-                  <p className="font-black">Tryb plikowy</p>
-                  <p className={cx("mt-1", t.textMuted)}>
-                    {fileSystemSupported ? "Dostępny w tej przeglądarce." : "Niedostępny — użyj Chrome/Edge albo pobrania pliku."}
-                  </p>
-                </div>
-                <div className={cx("rounded-2xl border p-3 text-xs leading-5", fileSession.active ? t.successButton : t.buttonSoft)}>
-                  <p className="font-black">Aktywna baza</p>
-                  <p className={cx("mt-1", fileSession.active ? "" : t.textMuted)}>
-                    {fileSession.active ? fileSession.fileName : "Brak otwartej sesji plikowej."}
-                  </p>
-                </div>
-              </div>
-
-              {fileSession.active && (
-                <p className={cx("mt-3 rounded-2xl border px-3 py-2 text-xs font-bold leading-5", t.successButton)}>
-                  Otwarta baza: {fileSession.fileName}. Ostatni zapis: {formatSessionTime(fileSession.lastSavedAt)}.
-                </p>
-              )}
+              <dl className={cx("divide-y", t.divider)}>
+                <StatusLine
+                  t={t}
+                  label="Kopia w przeglądarce"
+                  value={storageCopyDetected ? "Wykryto dane w znanych kluczach localStorage." : "Nie wykryto danych w znanych kluczach localStorage."}
+                />
+                <StatusLine
+                  t={t}
+                  label="Zapis do localStorage"
+                  value={browserPersistenceDisabled ? "Zatrzymany w tej sesji." : "Aktywny tylko, gdy nie ma sesji plikowej."}
+                />
+                <StatusLine
+                  t={t}
+                  label="Tryb plikowy"
+                  value={fileSystemSupported ? "Dostępny w tej przeglądarce." : "Niedostępny — użyj Chrome/Edge albo pobrania pliku."}
+                />
+                <StatusLine
+                  t={t}
+                  label="Aktywna baza"
+                  value={fileSession.active ? `${fileSession.fileName} · ostatni zapis: ${formatSessionTime(fileSession.lastSavedAt)}` : "Brak otwartej sesji plikowej."}
+                  strong={fileSession.active}
+                />
+              </dl>
             </section>
 
-            <section className={cx("mb-4 rounded-3xl border p-4", t.cardSolid)}>
-              <div className="mb-3 flex items-center gap-3">
-                <span className={cx("flex h-10 w-10 items-center justify-center rounded-2xl ring-1", t.chip)}>
-                  <HardDrive size={18} />
-                </span>
-                <div>
-                  <h3 className="text-sm font-black">2. Otwórz zaszyfrowaną bazę jako plik roboczy</h3>
-                  <p className={cx("text-xs font-semibold", t.textSoft)}>
-                    Wybierz istniejący zaszyfrowany plik, odblokuj go hasłem i pracuj bez trwałego zapisu w przeglądarce.
-                  </p>
-                </div>
-              </div>
+            <section className={cx("mb-4", panelClass)}>
+              <SectionIntro t={t} icon={<HardDrive size={17} />} title="Otwórz zaszyfrowany plik">
+                Użyj, gdy chcesz przełączyć tablicę na inny plik roboczy albo ponownie otworzyć bazę po zablokowaniu.
+              </SectionIntro>
 
-              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                <label className="grid gap-1 text-xs font-black">
-                  Hasło do otwieranej bazy
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                <label className="grid gap-1.5 text-xs font-black">
+                  Hasło do bazy
                   <input
                     type="password"
                     value={openPassword}
@@ -402,32 +404,24 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
                   type="button"
                   onClick={openEncryptedFileSession}
                   disabled={busy || !fileSystemSupported}
-                  className={cx("self-end inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.actionPrimary)}
+                  className={quietButtonClass}
                 >
-                  <HardDrive size={15} /> {busy ? "Otwieram..." : "Otwórz zaszyfrowaną bazę"}
+                  <HardDrive size={15} /> {busy ? "Otwieram..." : "Otwórz plik"}
                 </button>
               </div>
 
-              <p className={cx("mt-3 rounded-2xl border px-3 py-2 text-xs font-semibold leading-5", t.buttonSoft)}>
-                Po otwarciu pliku aplikacja zatrzyma zapis do localStorage w tej sesji. Hasło zostaje tylko w pamięci strony, żeby móc ponownie zaszyfrować zmiany do tego samego pliku.
+              <p className={cx("mt-3 text-xs font-semibold leading-5", t.textSoft)}>
+                Hasło zostaje tylko w pamięci strony. Po otwarciu pliku zapis do localStorage zostaje zatrzymany w tej sesji.
               </p>
             </section>
 
-            <section className={cx("mb-4 rounded-3xl border p-4", t.cardSolid)}>
-              <div className="mb-3 flex items-center gap-3">
-                <span className={cx("flex h-10 w-10 items-center justify-center rounded-2xl ring-1", t.chip)}>
-                  <ShieldCheck size={18} />
-                </span>
-                <div>
-                  <h3 className="text-sm font-black">3. Zaszyfruj aktualny stan tablicy</h3>
-                  <p className={cx("text-xs font-semibold", t.textSoft)}>
-                    Użyj dla starej bazy albo gdy chcesz utworzyć nowy zaszyfrowany plik roboczy.
-                  </p>
-                </div>
-              </div>
+            <section className={cx("mb-4", panelClass)}>
+              <SectionIntro t={t} icon={<ShieldCheck size={17} />} title="Zaszyfruj aktualny stan">
+                Przydatne przy migracji starej bazy albo gdy chcesz utworzyć dodatkowy zaszyfrowany plik.
+              </SectionIntro>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1 text-xs font-black">
+                <label className="grid gap-1.5 text-xs font-black">
                   Hasło do bazy
                   <input
                     type="password"
@@ -441,7 +435,7 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
                     placeholder="Minimum 8 znaków"
                   />
                 </label>
-                <label className="grid gap-1 text-xs font-black">
+                <label className="grid gap-1.5 text-xs font-black">
                   Powtórz hasło
                   <input
                     type="password"
@@ -462,30 +456,30 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
                   type="button"
                   onClick={saveEncryptedDatabaseToSelectedFile}
                   disabled={busy || !fileSystemSupported}
-                  className={cx("inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.actionPrimary)}
+                  className={quietButtonClass}
                 >
-                  <HardDrive size={15} /> {busy ? "Szyfruję..." : "Zaszyfruj i zapisz do wybranego pliku"}
+                  <HardDrive size={15} /> {busy ? "Szyfruję..." : "Zapisz do pliku"}
                 </button>
                 <button
                   type="button"
                   onClick={downloadEncryptedDatabase}
                   disabled={busy}
-                  className={cx("inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.buttonSoft)}
+                  className={quietButtonClass}
                 >
-                  <Download size={15} /> Zaszyfruj i pobierz
+                  <Download size={15} /> Pobierz plik
                 </button>
                 <button
                   type="button"
                   onClick={copyEncryptedDatabase}
                   disabled={busy}
-                  className={cx("inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.buttonSoft)}
+                  className={quietButtonClass}
                 >
-                  {copied ? <CheckCircle2 size={15} /> : <ShieldCheck size={15} />} {copied ? "Skopiowano" : "Kopiuj zaszyfrowaną treść"}
+                  {copied ? <CheckCircle2 size={15} /> : <ShieldCheck size={15} />} {copied ? "Skopiowano" : "Kopiuj treść"}
                 </button>
               </div>
 
               {lastFileSaveName && (
-                <p className={cx("mt-3 rounded-2xl border px-3 py-2 text-xs font-bold", t.successButton)}>
+                <p className={cx("mt-3", subtleInfoClass)}>
                   Plik roboczy zapisany: {lastFileSaveName}
                 </p>
               )}
@@ -501,30 +495,23 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
               )}
             </section>
 
-            <section className={cx("rounded-3xl border p-4", t.cardSolid)}>
-              <div className="mb-3 flex items-center gap-3">
-                <span className={cx("flex h-10 w-10 items-center justify-center rounded-2xl ring-1", t.chip)}>
-                  <Trash2 size={18} />
-                </span>
-                <div>
-                  <h3 className="text-sm font-black">4. Wyczyść starą kopię z przeglądarki</h3>
-                  <p className={cx("text-xs font-semibold", t.textSoft)}>
-                    Użyj dopiero po zapisaniu zaszyfrowanego pliku i pozytywnym teście importu albo po otwarciu sesji plikowej.
-                  </p>
-                </div>
+            <section className={panelClass}>
+              <SectionIntro t={t} icon={<Trash2 size={17} />} title="Stara kopia w przeglądarce">
+                Użyj dopiero po zapisaniu zaszyfrowanego pliku i pozytywnym teście otwierania bazy.
+              </SectionIntro>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={clearBrowserCopy}
+                  className={cx("inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5", t.dangerButton)}
+                >
+                  <Trash2 size={15} /> Usuń starą kopię
+                </button>
+                <p className={cx("max-w-xl text-xs font-semibold leading-5", t.textMuted)}>
+                  Otwarta sesja plikowa zapisuje zmiany do zaszyfrowanego pliku. localStorage zostaje tylko trybem awaryjnym, gdy nie pracujesz na pliku.
+                </p>
               </div>
-
-              <button
-                type="button"
-                onClick={clearBrowserCopy}
-                className={cx("inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5", t.dangerButton)}
-              >
-                <Trash2 size={15} /> Usuń starą kopię i zatrzymaj zapis w tej sesji
-              </button>
-
-              <p className={cx("mt-3 text-xs font-semibold leading-5", t.textMuted)}>
-                Ważne: otwarta sesja plikowa zapisuje zmiany do zaszyfrowanego pliku. localStorage zostaje tylko trybem awaryjnym, gdy nie pracujesz na pliku.
-              </p>
             </section>
           </motion.div>
         </motion.div>
