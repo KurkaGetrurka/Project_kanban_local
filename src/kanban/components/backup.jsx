@@ -20,6 +20,80 @@ function encryptedBackupFileName(fileName = "kanban-kopia.json") {
   return String(fileName).replace(/\.json$/i, "-zaszyfrowana.kanban.json");
 }
 
+function ModalHeader({ t, icon, title, hint, children }) {
+  return (
+    <div className="mb-5 flex items-start justify-between gap-4">
+      <div className="flex min-w-0 items-start gap-3">
+        <span className={cx("flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ring-1", t.chip)}>
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-xl font-black tracking-tight">{title}</h2>
+          {hint && <p className={cx("mt-1 text-xs font-semibold leading-5", t.textMuted)}>{hint}</p>}
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IconFlow({ t, items }) {
+  return (
+    <div className="mb-4 flex items-center gap-2" aria-hidden="true">
+      {items.map((item, index) => (
+        <React.Fragment key={item.label}>
+          <span
+            className={cx(
+              "flex h-9 w-9 items-center justify-center rounded-2xl border text-xs",
+              index === 1 ? t.successButton : t.buttonSoft
+            )}
+            title={item.label}
+          >
+            {item.icon}
+          </span>
+          {index < items.length - 1 && <span className={cx("h-px w-7", t.divider.replace("border", "bg"))} />}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+function ActionCard({ t, icon, title, subtitle, children, muted = false }) {
+  return (
+    <section className={cx("rounded-3xl border p-4", muted ? t.buttonSoft : t.cardSolid)}>
+      <div className="mb-3 flex items-start gap-3">
+        <span className={cx("flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ring-1", t.chip)}>
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <h3 className="text-sm font-black">{title}</h3>
+          {subtitle && <p className={cx("mt-1 text-xs font-semibold leading-5", t.textSoft)}>{subtitle}</p>}
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Notice({ t, children }) {
+  if (!children) return null;
+
+  return (
+    <div className={cx("mb-4 rounded-2xl border px-4 py-3 text-xs font-bold leading-5", t.buttonSoft)}>
+      {children}
+    </div>
+  );
+}
+
+function TextPreview({ t, label, children }) {
+  return (
+    <details className={cx("mt-3 rounded-2xl border px-3 py-2 text-xs", t.buttonSoft)}>
+      <summary className="cursor-pointer select-none font-black">{label}</summary>
+      <div className="mt-3">{children}</div>
+    </details>
+  );
+}
+
 export function ExportBackupModal({ t, open, backupText, fileName, onClose, onDownload }) {
   const textareaRef = useRef(null);
   const [copied, setCopied] = useState(false);
@@ -47,7 +121,7 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose, onDo
       textareaRef.current?.focus();
       textareaRef.current?.select();
     }, 0);
-    setDownloadNotice("Zaznaczyłam treść eksportu. Użyj Ctrl+C, wklej do Notatnika i zapisz ją ręcznie jako plik .json.");
+    setDownloadNotice("Zaznaczono treść. Skopiuj ją ręcznie jako plik JSON.");
   }
 
   function validateEncryptionPassword() {
@@ -57,11 +131,11 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose, onDo
       return null;
     }
     if (password.length < 8) {
-      setEncryptionNotice("Hasło powinno mieć minimum 8 znaków. To nie sejf z kartonu, dajmy mu trochę mięśni.");
+      setEncryptionNotice("Hasło powinno mieć minimum 8 znaków.");
       return null;
     }
     if (password !== databasePasswordRepeat.trim()) {
-      setEncryptionNotice("Hasła nie są takie same. Popraw drugie pole, zanim zaszyfrujemy bazę.");
+      setEncryptionNotice("Hasła nie są takie same.");
       return null;
     }
     return password;
@@ -72,14 +146,14 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose, onDo
     if (!password) return "";
 
     setEncrypting(true);
-    setEncryptionNotice("Szyfruję bazę. Przy większych danych może to chwilę pomyśleć — taki mały cyfrowy sejf robi pompki.");
+    setEncryptionNotice("Szyfruję bazę...");
 
     try {
       const plainPayload = parseBackupText(backupText);
       const encryptedPayload = await encryptKanbanDatabase(plainPayload, password);
       const nextEncryptedText = JSON.stringify(encryptedPayload, null, 2);
       setEncryptedText(nextEncryptedText);
-      setEncryptionNotice("Baza została zaszyfrowana. Możesz ją pobrać albo skopiować jako zaszyfrowany plik.");
+      setEncryptionNotice("Gotowe. Plik można pobrać albo skopiować.");
       return nextEncryptedText;
     } catch (error) {
       setEncryptionNotice(error.message || "Nie udało się zaszyfrować bazy.");
@@ -95,14 +169,14 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose, onDo
 
     const result = await downloadTextFile(encryptedBackupFileName(fileName), text);
     if (result?.reason === "cancelled") {
-      setEncryptionNotice("Zapisywanie zaszyfrowanej bazy zostało anulowane.");
+      setEncryptionNotice("Zapisywanie anulowane.");
       return;
     }
     if (result?.ok) {
-      setEncryptionNotice("Zaszyfrowana baza została przekazana do pobrania/zapisu.");
+      setEncryptionNotice("Zaszyfrowany plik przekazany do pobrania/zapisu.");
       return;
     }
-    setEncryptionNotice("Przeglądarka zablokowała pobranie. Użyj przycisku „Kopiuj zaszyfrowaną treść”.");
+    setEncryptionNotice("Pobranie zablokowane. Użyj kopiowania treści.");
   }
 
   async function copyEncryptedBackupText() {
@@ -112,32 +186,32 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose, onDo
     try {
       await navigator.clipboard.writeText(text);
       setEncryptedCopied(true);
-      setEncryptionNotice("Skopiowano zaszyfrowaną treść. Wklej ją do Notatnika i zapisz jako plik .json.");
+      setEncryptionNotice("Skopiowano zaszyfrowaną treść.");
       setTimeout(() => setEncryptedCopied(false), 1800);
     } catch {
-      setEncryptionNotice("Nie udało się skopiować automatycznie. Zaszyfrowana treść jest poniżej — zaznacz ją ręcznie.");
+      setEncryptionNotice("Nie udało się skopiować automatycznie. Rozwiń podgląd i skopiuj ręcznie.");
     }
   }
 
   async function handleDownloadClick() {
-    setDownloadNotice("Próbuję pobrać zwykły plik JSON. Jeśli przeglądarka nic nie pokaże, użyj bezpiecznej metody: „Zaznacz całość”.");
+    setDownloadNotice("Próbuję pobrać zwykły JSON...");
     const result = await onDownload?.();
     if (result?.reason === "cancelled") {
-      setDownloadNotice("Zapisywanie zostało anulowane. Treść eksportu nadal jest poniżej i można ją zapisać ręcznie.");
+      setDownloadNotice("Zapisywanie anulowane.");
       return;
     }
     if (result?.ok) {
-      setDownloadNotice("Wysłałam polecenie pobrania pliku. W Canvasie przeglądarka może je wyciszyć, więc najpewniejsza metoda to nadal „Zaznacz całość”.");
+      setDownloadNotice("Zwykły JSON przekazany do pobrania/zapisu.");
       return;
     }
-    setDownloadNotice("Pobieranie zostało zablokowane. Użyj „Zaznacz całość”, skopiuj tekst i zapisz go jako plik .json.");
+    setDownloadNotice("Pobieranie zablokowane. Skopiuj treść ręcznie.");
   }
 
   async function copyBackupText() {
     try {
       await navigator.clipboard.writeText(backupText);
       setCopied(true);
-      setDownloadNotice("Skopiowano treść eksportu do schowka. Wklej ją do Notatnika i zapisz jako plik .json.");
+      setDownloadNotice("Skopiowano zwykły JSON.");
       setTimeout(() => setCopied(false), 1800);
     } catch {
       selectBackupText();
@@ -148,133 +222,140 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose, onDo
     <AnimatePresence>
       {open && (
         <motion.div className={cx("fixed inset-0 z-40 flex items-center justify-center p-4 backdrop-blur-sm", t.overlay)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={onClose}>
-          <motion.div className={cx("max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[2rem] border p-5 shadow-2xl sm:p-6", t.modal)} initial={{ scale: 0.96, y: 20, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.96, y: 20, opacity: 0 }} onMouseDown={(event) => event.stopPropagation()}>
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <div className={cx("mb-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black shadow-sm", t.buttonPrimary)}><Upload size={14} /> Eksport danych</div>
-                <h2 className="text-2xl font-black">Kopia zapasowa tablicy</h2>
-                <p className={cx("mt-1 text-sm leading-6", t.textMuted)}>Możesz pobrać zwykły eksport JSON albo od razu zaszyfrować bazę hasłem. Wariant szyfrowany jest zalecany dla danych służbowych i wrażliwych.</p>
-              </div>
+          <motion.div className={cx("max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-[2rem] border p-5 shadow-2xl sm:p-6", t.modal)} initial={{ scale: 0.96, y: 20, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.96, y: 20, opacity: 0 }} onMouseDown={(event) => event.stopPropagation()}>
+            <div className="flex items-start justify-between gap-4">
+              <ModalHeader
+                t={t}
+                icon={<Upload size={18} />}
+                title="Eksport"
+                hint="Zapisz kopię tablicy. Dla danych firmowych wybierz wariant szyfrowany."
+              >
+                <IconFlow
+                  t={t}
+                  items={[
+                    { label: "Dane", icon: <BookOpen size={15} /> },
+                    { label: "Szyfrowanie", icon: <ShieldCheck size={15} /> },
+                    { label: "Plik", icon: <Upload size={15} /> },
+                  ]}
+                />
+              </ModalHeader>
               <button type="button" onClick={onClose} className={cx("rounded-2xl p-2 transition", t.hoverSoft, t.textMuted)}><X /></button>
             </div>
 
-            <div className={cx("mb-4 rounded-3xl border p-4", t.cardSolid)}>
-              <div className="mb-3 flex items-center gap-3">
-                <span className={cx("flex h-10 w-10 items-center justify-center rounded-2xl ring-1", t.chip)}><ShieldCheck size={18} /></span>
-                <div>
-                  <h3 className="text-sm font-black">Bezpieczny eksport: zaszyfrowana baza</h3>
-                  <p className={cx("text-xs font-semibold", t.textSoft)}>Ustaw hasło bazy. Bez niego plik będzie nieczytelny.</p>
+            <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+              <ActionCard
+                t={t}
+                icon={<ShieldCheck size={18} />}
+                title="Zaszyfrowany plik"
+                subtitle="Zalecane do codziennego użycia."
+              >
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="grid gap-1 text-xs font-black">
+                    Hasło
+                    <input
+                      type="password"
+                      value={databasePassword}
+                      onChange={(event) => {
+                        setDatabasePassword(event.target.value);
+                        setEncryptedText("");
+                      }}
+                      className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
+                      placeholder="Minimum 8 znaków"
+                    />
+                  </label>
+
+                  <label className="grid gap-1 text-xs font-black">
+                    Powtórz hasło
+                    <input
+                      type="password"
+                      value={databasePasswordRepeat}
+                      onChange={(event) => {
+                        setDatabasePasswordRepeat(event.target.value);
+                        setEncryptedText("");
+                      }}
+                      className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
+                      placeholder="To samo hasło"
+                    />
+                  </label>
                 </div>
-              </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1 text-xs font-black">
-                  Hasło do bazy
-                  <input
-                    type="password"
-                    value={databasePassword}
-                    onChange={(event) => {
-                      setDatabasePassword(event.target.value);
-                      setEncryptedText("");
-                    }}
-                    className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
-                    placeholder="Minimum 8 znaków"
-                  />
-                </label>
+                {encryptionNotice && <div className={cx("mt-3 rounded-2xl border px-3 py-2 text-xs font-bold leading-5", t.buttonSoft)}>{encryptionNotice}</div>}
 
-                <label className="grid gap-1 text-xs font-black">
-                  Powtórz hasło
-                  <input
-                    type="password"
-                    value={databasePasswordRepeat}
-                    onChange={(event) => {
-                      setDatabasePasswordRepeat(event.target.value);
-                      setEncryptedText("");
-                    }}
-                    className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
-                    placeholder="To samo hasło"
-                  />
-                </label>
-              </div>
-
-              {encryptionNotice && (
-                <div className={cx("mt-3 rounded-2xl border px-3 py-2 text-xs font-bold leading-5", t.buttonSoft)}>
-                  {encryptionNotice}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={handleEncryptedDownloadClick}
+                    disabled={encrypting}
+                    className={cx("inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.actionPrimary)}
+                  >
+                    <ShieldCheck size={15} /> {encrypting ? "Szyfruję..." : "Pobierz szyfrowany"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={copyEncryptedBackupText}
+                    disabled={encrypting}
+                    className={cx("inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.buttonSoft)}
+                  >
+                    {encryptedCopied ? <CheckCircle2 size={15} /> : <BookOpen size={15} />} {encryptedCopied ? "Skopiowano" : "Kopiuj"}
+                  </button>
                 </div>
-              )}
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={handleEncryptedDownloadClick}
-                  disabled={encrypting}
-                  className={cx("inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.actionPrimary)}
-                >
-                  <ShieldCheck size={15} /> {encrypting ? "Szyfruję..." : "Zaszyfruj i pobierz"}
-                </button>
-                <button
-                  type="button"
-                  onClick={copyEncryptedBackupText}
-                  disabled={encrypting}
-                  className={cx("inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.buttonSoft)}
-                >
-                  {encryptedCopied ? <CheckCircle2 size={15} /> : <BookOpen size={15} />} {encryptedCopied ? "Skopiowano" : "Kopiuj zaszyfrowaną treść"}
-                </button>
-              </div>
+                {encryptedText && (
+                  <TextPreview t={t} label="Pokaż zaszyfrowaną treść">
+                    <textarea
+                      value={encryptedText}
+                      readOnly
+                      spellCheck={false}
+                      className={cx("h-40 w-full resize-none rounded-2xl border p-3 font-mono text-[11px] leading-5 outline-none", t.inputSolid)}
+                      onFocus={(event) => event.target.select()}
+                    />
+                  </TextPreview>
+                )}
+              </ActionCard>
 
-              {encryptedText && (
-                <textarea
-                  value={encryptedText}
-                  readOnly
-                  spellCheck={false}
-                  className={cx("mt-3 h-40 w-full resize-none rounded-2xl border p-3 font-mono text-[11px] leading-5 outline-none", t.inputSolid)}
-                  onFocus={(event) => event.target.select()}
-                />
-              )}
-            </div>
-
-            <div className={cx("mb-4 rounded-3xl border p-4", t.cardSolid)}>
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-black">Zwykły eksport JSON</p>
-                  <p className={cx("truncate text-xs font-semibold", t.textSoft)}>{fileName}</p>
-                </div>
+              <ActionCard
+                t={t}
+                icon={<BookOpen size={18} />}
+                title="Zwykły JSON"
+                subtitle="Awaryjnie albo do migracji."
+                muted
+              >
+                <p className={cx("mb-3 truncate text-xs font-semibold", t.textSoft)}>{fileName}</p>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={copyBackupText}
-                    className={cx("inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black shadow-lg transition hover:-translate-y-0.5", t.buttonPrimary)}
+                    className={cx("inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5", t.buttonSoft)}
                   >
-                    {copied ? <CheckCircle2 size={15} /> : <BookOpen size={15} />} {copied ? "Skopiowano" : "Kopiuj treść"}
+                    {copied ? <CheckCircle2 size={15} /> : <BookOpen size={15} />} {copied ? "Skopiowano" : "Kopiuj JSON"}
                   </button>
                   <button
                     type="button"
                     onClick={handleDownloadClick}
                     className={cx("inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5", t.buttonSoft)}
                   >
-                    <Upload size={15} /> Pobierz zwykły JSON
+                    <Upload size={15} /> Pobierz JSON
                   </button>
                 </div>
-              </div>
-              {downloadNotice && (
-                <div className={cx("mb-3 rounded-2xl border px-3 py-2 text-xs font-bold leading-5", t.buttonSoft)}>
-                  {downloadNotice}
-                </div>
-              )}
-              <textarea
-                ref={textareaRef}
-                value={backupText}
-                readOnly
-                spellCheck={false}
-                className={cx("h-56 w-full resize-none rounded-2xl border p-3 font-mono text-[11px] leading-5 outline-none", t.inputSolid)}
-                onFocus={(event) => event.target.select()}
-              />
+
+                {downloadNotice && <div className={cx("mt-3 rounded-2xl border px-3 py-2 text-xs font-bold leading-5", t.buttonSoft)}>{downloadNotice}</div>}
+
+                <TextPreview t={t} label="Pokaż treść JSON">
+                  <textarea
+                    ref={textareaRef}
+                    value={backupText}
+                    readOnly
+                    spellCheck={false}
+                    className={cx("h-56 w-full resize-none rounded-2xl border p-3 font-mono text-[11px] leading-5 outline-none", t.inputSolid)}
+                    onFocus={(event) => event.target.select()}
+                  />
+                </TextPreview>
+              </ActionCard>
             </div>
 
-            <div className={cx("rounded-3xl border p-4 text-sm leading-6", t.buttonSoft)}>
-              <p className="font-black">Zalecenie bezpieczeństwa:</p>
-              <p className={cx("mt-1", t.textMuted)}>Dla danych firmowych używaj eksportu zaszyfrowanego. Zwykły JSON zostawiamy tymczasowo do migracji i awaryjnego testowania, ale docelowo to nie powinien być główny sposób zapisu danych wrażliwych.</p>
-            </div>
+            <p className={cx("mt-4 border-t pt-4 text-[11px] font-semibold leading-5", t.divider, t.textSoft)}>
+              Skrót: plik szyfrowany do normalnej pracy, JSON tylko awaryjnie.
+            </p>
           </motion.div>
         </motion.div>
       )}
@@ -330,7 +411,7 @@ export function ImportBackupModal({ t, open, onClose, onImportText, onImportFile
           previewText: "",
         });
         setDatabasePassword("");
-        setImportNotice("Wykryto zaszyfrowaną bazę. Wpisz hasło, żeby odblokować podgląd i import.");
+        setImportNotice("Wykryto zaszyfrowaną bazę. Wpisz hasło.");
         return { encrypted: true };
       }
 
@@ -344,11 +425,11 @@ export function ImportBackupModal({ t, open, onClose, onImportText, onImportFile
         previewText: buildPreview(parsed),
       });
       setDatabasePassword("");
-      setImportNotice("Wykryto zwykłą kopię JSON. Podgląd jest odblokowany — możesz ją wczytać.");
+      setImportNotice("Wykryto zwykły JSON. Możesz wczytać bazę.");
       return { encrypted: false };
     } catch (error) {
       setSelectedImport(null);
-      setImportNotice(error.message || "Nie udało się rozpoznać pliku importu.");
+      setImportNotice(error.message || "Nie udało się rozpoznać importu.");
       return null;
     }
   }
@@ -361,12 +442,12 @@ export function ImportBackupModal({ t, open, onClose, onImportText, onImportFile
 
     const password = databasePassword.trim();
     if (!password) {
-      setImportNotice("Podaj hasło do bazy, żeby odblokować import.");
+      setImportNotice("Podaj hasło do bazy.");
       return;
     }
 
     setImporting(true);
-    setImportNotice("Odszyfrowuję bazę i sprawdzam, czy hasło pasuje...");
+    setImportNotice("Odszyfrowuję...");
 
     try {
       const decrypted = await decryptKanbanDatabase(selectedImport.encryptedPayload, password);
@@ -376,9 +457,9 @@ export function ImportBackupModal({ t, open, onClose, onImportText, onImportFile
         parsed: decrypted,
         previewText: buildPreview(decrypted),
       }));
-      setImportNotice("Baza została odszyfrowana. Podgląd i przycisk importu są odblokowane.");
+      setImportNotice("Baza odblokowana. Możesz ją wczytać.");
     } catch (error) {
-      setImportNotice(error.message || "Nie udało się odszyfrować bazy. Sprawdź hasło i spróbuj ponownie.");
+      setImportNotice(error.message || "Nie udało się odszyfrować bazy.");
     } finally {
       setImporting(false);
     }
@@ -386,12 +467,12 @@ export function ImportBackupModal({ t, open, onClose, onImportText, onImportFile
 
   async function commitSelectedImport() {
     if (!selectedImport?.parsed || selectedImport.locked) {
-      setImportNotice("Najpierw odblokuj bazę albo wybierz poprawny plik JSON.");
+      setImportNotice("Najpierw wybierz albo odblokuj bazę.");
       return false;
     }
 
     setImporting(true);
-    setImportNotice("Wczytuję odblokowaną bazę do tablicy...");
+    setImportNotice("Wczytuję...");
 
     try {
       const ok = onImportText(JSON.stringify(selectedImport.parsed));
@@ -399,7 +480,7 @@ export function ImportBackupModal({ t, open, onClose, onImportText, onImportFile
         setText("");
         setDatabasePassword("");
         setSelectedImport(null);
-        setImportNotice(selectedImport.encrypted ? "Zaszyfrowana baza została odszyfrowana i wczytana." : "Zwykła kopia JSON została wczytana.");
+        setImportNotice("Baza została wczytana.");
       }
       return ok;
     } catch (error) {
@@ -418,7 +499,7 @@ export function ImportBackupModal({ t, open, onClose, onImportText, onImportFile
     if (!file) return;
 
     setImporting(true);
-    setImportNotice("Odczytuję wybrany plik...");
+    setImportNotice("Odczytuję plik...");
 
     try {
       const rawText = await readTextFile(file);
@@ -437,36 +518,59 @@ export function ImportBackupModal({ t, open, onClose, onImportText, onImportFile
 
   const hasLockedEncryptedImport = Boolean(selectedImport?.encrypted && selectedImport.locked);
   const hasUnlockedImport = Boolean(selectedImport?.parsed && !selectedImport.locked);
+  const importStatus = selectedImport
+    ? selectedImport.encrypted
+      ? selectedImport.locked
+        ? "Zaszyfrowana · zablokowana"
+        : "Zaszyfrowana · odblokowana"
+      : "JSON · gotowy"
+    : "Brak pliku";
 
   return (
     <AnimatePresence>
       {open && (
         <motion.div className={cx("fixed inset-0 z-40 flex items-center justify-center p-4 backdrop-blur-sm", t.overlay)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={onClose}>
-          <motion.div className={cx("max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[2rem] border p-5 shadow-2xl sm:p-6", t.modal)} initial={{ scale: 0.96, y: 20, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.96, y: 20, opacity: 0 }} onMouseDown={(event) => event.stopPropagation()}>
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <div className={cx("mb-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black shadow-sm", t.buttonPrimary)}><RotateCcw size={14} /> Import danych</div>
-                <h2 className="text-2xl font-black">Wczytaj kopię zapasową tablicy</h2>
-                <p className={cx("mt-1 text-sm leading-6", t.textMuted)}>Najpierw wybierz plik albo wklej treść. Jeśli baza jest zaszyfrowana, podgląd i import odblokują się dopiero po wpisaniu hasła.</p>
-              </div>
+          <motion.div className={cx("max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-[2rem] border p-5 shadow-2xl sm:p-6", t.modal)} initial={{ scale: 0.96, y: 20, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.96, y: 20, opacity: 0 }} onMouseDown={(event) => event.stopPropagation()}>
+            <div className="flex items-start justify-between gap-4">
+              <ModalHeader
+                t={t}
+                icon={<RotateCcw size={18} />}
+                title="Import"
+                hint="Wybierz plik lub wklej treść. Zaszyfrowane bazy wymagają hasła."
+              >
+                <IconFlow
+                  t={t}
+                  items={[
+                    { label: "Plik", icon: <Upload size={15} /> },
+                    { label: "Sprawdzenie", icon: <ShieldCheck size={15} /> },
+                    { label: "Wczytanie", icon: <CheckCircle2 size={15} /> },
+                  ]}
+                />
+              </ModalHeader>
               <button type="button" onClick={onClose} className={cx("rounded-2xl p-2 transition", t.hoverSoft, t.textMuted)}><X /></button>
             </div>
 
-            {importNotice && (
-              <div className={cx("mb-4 rounded-3xl border px-4 py-3 text-xs font-bold leading-5", t.buttonSoft)}>
-                {importNotice}
-              </div>
-            )}
+            <Notice t={t}>{importNotice}</Notice>
 
-            <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-              <section className={cx("rounded-3xl border p-4", t.cardSolid)}>
-                <div className="mb-3 flex items-center gap-3">
-                  <span className={cx("flex h-10 w-10 items-center justify-center rounded-2xl ring-1", t.chip)}><Upload size={18} /></span>
-                  <div>
-                    <h3 className="text-sm font-black">1. Wybierz plik bazy</h3>
-                    <p className={cx("text-xs font-semibold", t.textSoft)}>Aplikacja sama rozpozna zwykły JSON albo zaszyfrowaną bazę.</p>
-                  </div>
-                </div>
+            <div className="mb-4 grid gap-2 sm:grid-cols-3">
+              <div className={cx("rounded-2xl border px-3 py-2 text-xs font-bold", t.buttonSoft)} title={selectedImport?.sourceName || "Nie wybrano pliku"}>
+                <span className={t.textSoft}>Status: </span>{importStatus}
+              </div>
+              <div className={cx("rounded-2xl border px-3 py-2 text-xs font-bold", t.buttonSoft)}>
+                <span className={t.textSoft}>Źródło: </span>{selectedImport ? "wybrane" : "czeka"}
+              </div>
+              <div className={cx("rounded-2xl border px-3 py-2 text-xs font-bold", hasUnlockedImport ? t.successButton : t.buttonSoft)}>
+                {hasUnlockedImport ? "Gotowe do wczytania" : "Import zablokowany"}
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <ActionCard
+                t={t}
+                icon={<Upload size={18} />}
+                title="Plik"
+                subtitle="JSON albo zaszyfrowana baza."
+              >
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -478,57 +582,45 @@ export function ImportBackupModal({ t, open, onClose, onImportText, onImportFile
                   }}
                 />
                 <button type="button" onClick={() => fileInputRef.current?.click()} disabled={importing} className={cx("inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.buttonPrimary)}>
-                  <Upload size={16} /> {importing ? "Sprawdzam..." : "Wybierz plik bazy"}
+                  <Upload size={16} /> {importing ? "Sprawdzam..." : "Wybierz plik"}
                 </button>
 
                 {selectedImport && (
-                  <div className={cx("mt-4 rounded-2xl border p-3 text-xs leading-5", t.buttonSoft)}>
-                    <p className="font-black">Wybrano:</p>
-                    <p className={cx("mt-1 break-all font-semibold", t.textMuted)}>{selectedImport.sourceName}</p>
-                    <p className="mt-2 font-black">Status:</p>
-                    <p className={cx("mt-1", t.textMuted)}>
-                      {selectedImport.encrypted
-                        ? selectedImport.locked
-                          ? "Zaszyfrowana baza — zablokowana do czasu wpisania hasła."
-                          : "Zaszyfrowana baza — odblokowana i gotowa do wczytania."
-                        : "Zwykła kopia JSON — gotowa do wczytania."}
-                    </p>
-                    <button type="button" onClick={clearSelectedImport} className={cx("mt-3 inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs font-black transition hover:-translate-y-0.5", t.buttonSoft)}>
-                      <X size={14} /> Wybierz inny plik
+                  <div className={cx("mt-3 rounded-2xl border px-3 py-2 text-xs font-bold", t.buttonSoft)}>
+                    <p className="truncate" title={selectedImport.sourceName}>{selectedImport.sourceName}</p>
+                    <button type="button" onClick={clearSelectedImport} className={cx("mt-2 inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-[11px] font-black transition hover:-translate-y-0.5", t.buttonSoft)}>
+                      <X size={13} /> Zmień plik
                     </button>
                   </div>
                 )}
-              </section>
+              </ActionCard>
 
-              <section className={cx("rounded-3xl border p-4", t.cardSolid)}>
-                <div className="mb-3 flex items-center gap-3">
-                  <span className={cx("flex h-10 w-10 items-center justify-center rounded-2xl ring-1", t.chip)}><BookOpen size={18} /></span>
-                  <div>
-                    <h3 className="text-sm font-black">Awaryjnie: wklej treść bazy</h3>
-                    <p className={cx("text-xs font-semibold", t.textSoft)}>Działa dla zwykłego JSON i zaszyfrowanej treści.</p>
-                  </div>
-                </div>
+              <ActionCard
+                t={t}
+                icon={<BookOpen size={18} />}
+                title="Wklej treść"
+                subtitle="Awaryjnie, gdy nie wybierasz pliku."
+                muted
+              >
                 <textarea
                   value={text}
                   onChange={(event) => setText(event.target.value)}
-                  placeholder="Wklej tutaj pełną treść kopii JSON albo zaszyfrowanej bazy..."
-                  className={cx("h-40 w-full resize-none rounded-2xl border p-3 font-mono text-[11px] leading-5 outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
+                  placeholder="Wklej treść JSON albo zaszyfrowanej bazy..."
+                  className={cx("h-32 w-full resize-none rounded-2xl border p-3 font-mono text-[11px] leading-5 outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
                 />
-                <button type="button" onClick={submitTextInspection} disabled={!text.trim() || importing} className={cx("mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.buttonPrimary)}>
-                  <BookOpen size={16} /> Sprawdź wklejoną treść
+                <button type="button" onClick={submitTextInspection} disabled={!text.trim() || importing} className={cx("mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.buttonSoft)}>
+                  <BookOpen size={15} /> Sprawdź treść
                 </button>
-              </section>
+              </ActionCard>
             </div>
 
             {hasLockedEncryptedImport && (
-              <section className={cx("mt-4 rounded-3xl border p-4", t.cardSolid)}>
-                <div className="mb-3 flex items-center gap-3">
-                  <span className={cx("flex h-10 w-10 items-center justify-center rounded-2xl ring-1", t.chip)}><ShieldCheck size={18} /></span>
-                  <div>
-                    <h3 className="text-sm font-black">2. Odblokuj zaszyfrowaną bazę</h3>
-                    <p className={cx("text-xs font-semibold", t.textSoft)}>Po poprawnym haśle pokażę podgląd danych i dopiero wtedy odblokuję import.</p>
-                  </div>
-                </div>
+              <ActionCard
+                t={t}
+                icon={<ShieldCheck size={18} />}
+                title="Hasło"
+                subtitle="Odblokuj zaszyfrowaną bazę."
+              >
                 <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                   <input
                     type="password"
@@ -538,48 +630,42 @@ export function ImportBackupModal({ t, open, onClose, onImportText, onImportFile
                     placeholder="Hasło do bazy"
                   />
                   <button type="button" onClick={unlockEncryptedImport} disabled={!databasePassword.trim() || importing} className={cx("inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.actionPrimary)}>
-                    <ShieldCheck size={15} /> {importing ? "Odszyfrowuję..." : "Odszyfruj i pokaż podgląd"}
+                    <ShieldCheck size={15} /> {importing ? "Odszyfrowuję..." : "Odszyfruj"}
                   </button>
                 </div>
-              </section>
+              </ActionCard>
             )}
 
             <section className={cx("mt-4 rounded-3xl border p-4", hasUnlockedImport ? t.cardSolid : t.buttonSoft)}>
               <div className="mb-3 flex items-center gap-3">
                 <span className={cx("flex h-10 w-10 items-center justify-center rounded-2xl ring-1", t.chip)}><CheckCircle2 size={18} /></span>
                 <div>
-                  <h3 className="text-sm font-black">3. Podgląd i wczytanie</h3>
-                  <p className={cx("text-xs font-semibold", t.textSoft)}>
-                    {hasUnlockedImport ? "Dane są odblokowane. Sprawdź podgląd i wczytaj bazę." : "Podgląd pojawi się po wybraniu zwykłego JSON albo po odszyfrowaniu bazy."}
-                  </p>
+                  <h3 className="text-sm font-black">Wczytanie</h3>
+                  <p className={cx("text-xs font-semibold", t.textSoft)}>{hasUnlockedImport ? "Baza gotowa." : "Najpierw wybierz albo odblokuj bazę."}</p>
                 </div>
               </div>
 
               {hasUnlockedImport ? (
                 <>
-                  <textarea
-                    value={selectedImport.previewText}
-                    readOnly
-                    spellCheck={false}
-                    className={cx("h-56 w-full resize-none rounded-2xl border p-3 font-mono text-[11px] leading-5 outline-none", t.inputSolid)}
-                    onFocus={(event) => event.target.select()}
-                  />
+                  <TextPreview t={t} label="Pokaż podgląd danych">
+                    <textarea
+                      value={selectedImport.previewText}
+                      readOnly
+                      spellCheck={false}
+                      className={cx("h-56 w-full resize-none rounded-2xl border p-3 font-mono text-[11px] leading-5 outline-none", t.inputSolid)}
+                      onFocus={(event) => event.target.select()}
+                    />
+                  </TextPreview>
                   <button type="button" onClick={commitSelectedImport} disabled={importing} className={cx("mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.actionPrimary)}>
-                    <RotateCcw size={16} /> {importing ? "Wczytuję..." : "Wczytaj odblokowaną bazę"}
+                    <RotateCcw size={16} /> {importing ? "Wczytuję..." : "Wczytaj bazę"}
                   </button>
                 </>
               ) : (
-                <div className={cx("rounded-2xl border p-3 text-xs leading-5", t.buttonSoft)}>
-                  <p className="font-black">Import jest jeszcze zablokowany.</p>
-                  <p className={cx("mt-1", t.textMuted)}>Najpierw wybierz plik. Jeśli jest zaszyfrowany, wpisz hasło i odblokuj podgląd. Mały sejf nie pokaże zawartości bez klucza — i bardzo dobrze.</p>
+                <div className={cx("rounded-2xl border px-3 py-2 text-xs font-bold", t.buttonSoft)}>
+                  Import jest zablokowany.
                 </div>
               )}
             </section>
-
-            <div className={cx("mt-4 rounded-3xl border p-4 text-sm leading-6", t.buttonSoft)}>
-              <p className="font-black">Bezpieczna kolejność testu:</p>
-              <p className={cx("mt-1", t.textMuted)}>Wybierz zaszyfrowany plik, wpisz hasło, sprawdź odblokowany podgląd i dopiero wtedy kliknij wczytanie. Przy złym haśle podgląd oraz import pozostaną zablokowane.</p>
-            </div>
           </motion.div>
         </motion.div>
       )}
