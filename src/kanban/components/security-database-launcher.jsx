@@ -141,7 +141,7 @@ export function SecurityDatabaseLauncher() {
     ? "border-violet-300/40 bg-slate-950/85 text-white hover:bg-slate-900"
     : "border-violet-200 bg-white/90 text-slate-800 shadow-violet-200/40 hover:bg-violet-50";
   const lockButtonTheme = themeMode === "dark"
-    ? "border-rose-300/40 bg-rose-950/85 text-rose-50 hover:bg-rose-900"
+    ? "border-rose-300/40 bg-rose-950/95 text-rose-50 hover:bg-rose-900"
     : "border-rose-200 bg-rose-50/95 text-rose-800 shadow-rose-100/60 hover:bg-rose-100";
   const statusCopy = getStatusCopy(databaseStatus);
   const StatusIcon = statusCopy.icon;
@@ -272,21 +272,6 @@ export function SecurityDatabaseLauncher() {
         </button>
       )}
 
-      {databaseStatus.session?.active && !open && (
-        <button
-          type="button"
-          onClick={lockDatabaseSession}
-          className={cx(
-            "fixed bottom-4 right-28 z-50 inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-xs font-black shadow-2xl backdrop-blur-2xl transition hover:-translate-y-0.5",
-            lockButtonTheme
-          )}
-          title="Zablokuj zaszyfrowaną bazę i wyczyść widok"
-        >
-          <ShieldCheck size={16} />
-          <span>Zablokuj</span>
-        </button>
-      )}
-
       <button
         type="button"
         onClick={openSecurityPanel}
@@ -310,6 +295,21 @@ export function SecurityDatabaseLauncher() {
           refreshLauncherState({ lastError: databaseStatus.lastError });
         }}
       />
+
+      {databaseStatus.session?.active && open && (
+        <button
+          type="button"
+          onClick={lockDatabaseSession}
+          className={cx(
+            "fixed bottom-6 left-1/2 z-[60] inline-flex -translate-x-1/2 items-center gap-2 rounded-2xl border px-4 py-3 text-xs font-black shadow-2xl backdrop-blur-2xl transition hover:-translate-y-0.5",
+            lockButtonTheme
+          )}
+          title="Zablokuj zaszyfrowaną bazę i wyczyść widok"
+        >
+          <ShieldCheck size={16} />
+          <span>Zablokuj otwartą bazę</span>
+        </button>
+      )}
     </>
   );
 }
