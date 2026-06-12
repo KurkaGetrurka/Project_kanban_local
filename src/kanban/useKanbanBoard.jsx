@@ -449,7 +449,7 @@ export function useKanbanBoard() {
     setDraft((current) => ({ ...current, subtasks: (current.subtasks || []).map((item) => (item.id === subtaskId ? { ...item, ...patch } : item)) }));
   }
   function removeSubtask(subtaskId) {
-    setDraft((current) => ({ ...current, subtasks: (current.subtasks || []).filter((item) => item.text.trim()) }));
+    setDraft((current) => ({ ...current, subtasks: (current.subtasks || []).filter((item) => item.id !== subtaskId) }));
   }
   async function attachTaskImage(fileInput) {
     const files = Array.from(fileInput?.length !== undefined ? fileInput : [fileInput]).filter(Boolean);
