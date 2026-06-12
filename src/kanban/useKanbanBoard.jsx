@@ -30,6 +30,12 @@ import {
   theme,
   uid,
 } from "./shared.jsx";
+import { shouldPersistToBrowserStorage } from "./security/browserStoragePolicy.js";
+import {
+  getActiveFileDatabaseSummary,
+  hasActiveFileDatabaseSession,
+  saveActiveEncryptedDatabaseSession,
+} from "./security/fileDatabaseStorage.js";
 
 const createQuickTaskState = () => ({
   title: "",
@@ -135,6 +141,7 @@ export function useKanbanBoard() {
     return new Date(today.getFullYear(), today.getMonth(), 1);
   });
   const lastWidgetMoveRef = useRef("");
+  const fileSessionSaveTimerRef = useRef(null);
   const t = darkMode ? theme.dark : theme.light;
   const isDark = darkMode;
   const persistedBoardState = useMemo(
@@ -158,8 +165,48 @@ export function useKanbanBoard() {
     document.body?.classList.remove("dark");
   }, [darkMode, draft, archiveOpen, timelineOpen]);
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    safeStorageSetItem(STORAGE_KEY, JSON.stringify(persistedBoardState));
+    if (typeof window === "undefined") return undefined;
+
+    if (hasActiveFileDatabaseSession()) {
+      if (fileSessionSaveTimerRef.current) {
+        window.clearTimeout(fileSessionSaveTimerRef.current);
+      }
+
+      fileSessionSaveTimerRef.current = window.setTimeout(async () => {
+        try {
+          const result = await saveActiveEncryptedDatabaseSession(buildBackupPayload(persistedBoardState));
+          window.dispatchEvent(
+            new CustomEvent("kanban-file-database-saved", {
+              detail: {
+                ...result,
+                session: getActiveFileDatabaseSummary(),
+              },
+            })
+          );
+        } catch (error) {
+          window.dispatchEvent(
+            new CustomEvent("kanban-file-database-save-error", {
+              detail: {
+                message: error?.message || "Nie udało się zapisać zmian do zaszyfrowanego pliku.",
+              },
+            })
+          );
+        }
+      }, 750);
+
+      return () => {
+        if (fileSessionSaveTimerRef.current) {
+          window.clearTimeout(fileSessionSaveTimerRef.current);
+          fileSessionSaveTimerRef.current = null;
+        }
+      };
+    }
+
+    if (shouldPersistToBrowserStorage()) {
+      safeStorageSetItem(STORAGE_KEY, JSON.stringify(persistedBoardState));
+    }
+
+    return undefined;
   }, [persistedBoardState]);
 
   // Derived board state
@@ -265,7 +312,7 @@ export function useKanbanBoard() {
     }
     return result;
   }
-  function applyImportedBackup(parsed) {
+  function applyImportedBackup(parsed, options = {}) {
     if (!hasImportableKanbanData(parsed)) throw new Error("Wybrany plik nie wygląda jak kopia zapasowa tej tablicy. Brakuje listy zadań.");
     const normalized = normalizeImportedState(parsed, persistedBoardState);
     const importedCount = countImportableTasks(parsed);
@@ -292,10 +339,14 @@ export function useKanbanBoard() {
     closeSecondaryViews();
     if (importedMonth) setCalendarMonth(new Date(importedMonth.getFullYear(), importedMonth.getMonth(), 1));
     if (typeof window !== "undefined") {
-      safeStorageSetItem(STORAGE_KEY, JSON.stringify(nextState));
-      window.dispatchEvent(new CustomEvent("kanban-imported", { detail: { importedCount, restoredCount: nextState.tasks.length } }));
+      if (shouldPersistToBrowserStorage() && !hasActiveFileDatabaseSession()) {
+        safeStorageSetItem(STORAGE_KEY, JSON.stringify(nextState));
+      }
+      window.dispatchEvent(new CustomEvent("kanban-imported", { detail: { importedCount, restoredCount: nextState.tasks.length, source: options.source || "import" } }));
     }
-    alert(`Kopia zapasowa została wczytana. Odczytano ${importedCount} kart, przywrócono ${nextState.tasks.length}.`);
+    if (!options.silent) {
+      alert(`Kopia zapasowa została wczytana. Odczytano ${importedCount} kart, przywrócono ${nextState.tasks.length}.`);
+    }
   }
   function requestImportBackup() {
     setImportOpen(true);
@@ -320,6 +371,23 @@ export function useKanbanBoard() {
       return false;
     }
   }
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    function handleFileDatabaseOpened(event) {
+      try {
+        const payload = event.detail?.payload;
+        const fileName = event.detail?.fileName || "zaszyfrowana baza";
+        applyImportedBackup(payload, { silent: true, source: "file-database" });
+        window.dispatchEvent(new CustomEvent("kanban-file-database-applied", { detail: { fileName } }));
+      } catch (error) {
+        alert(error.message || "Nie udało się wczytać odszyfrowanej bazy do tablicy.");
+      }
+    }
+
+    window.addEventListener("kanban-file-database-opened", handleFileDatabaseOpened);
+    return () => window.removeEventListener("kanban-file-database-opened", handleFileDatabaseOpened);
+  }, [persistedBoardState]);
   function moveTask(taskId, columnId, targetTaskId = null, placement = "end") {
     setTasks((current) => {
       const draggedTask = current.find((task) => task.id === taskId);
@@ -381,7 +449,7 @@ export function useKanbanBoard() {
     setDraft((current) => ({ ...current, subtasks: (current.subtasks || []).map((item) => (item.id === subtaskId ? { ...item, ...patch } : item)) }));
   }
   function removeSubtask(subtaskId) {
-    setDraft((current) => ({ ...current, subtasks: (current.subtasks || []).filter((item) => item.id !== subtaskId) }));
+    setDraft((current) => ({ ...current, subtasks: (current.subtasks || []).filter((item) => item.text.trim()) }));
   }
   async function attachTaskImage(fileInput) {
     const files = Array.from(fileInput?.length !== undefined ? fileInput : [fileInput]).filter(Boolean);
