@@ -52,7 +52,7 @@ function SectionIntro({ t, icon, title, children }) {
 
 function StatusLine({ t, label, value, strong = false }) {
   return (
-    <div className={cx("grid gap-1 py-2.5 text-xs sm:grid-cols-[12rem_1fr] sm:gap-4", t.divider)}>
+    <div className={cx("grid gap-1 py-2.5 text-xs sm:grid-cols-[10rem_1fr] sm:gap-4", t.divider)}>
       <dt className={cx("font-black", t.textSoft)}>{label}</dt>
       <dd className={cx("font-semibold leading-5", strong ? "" : t.textMuted)}>{value}</dd>
     </div>
@@ -327,7 +327,7 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
           onMouseDown={onClose}
         >
           <motion.div
-            className={cx("max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[2rem] border p-5 shadow-2xl sm:p-6", t.modal)}
+            className={cx("max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-[2rem] border p-5 shadow-2xl sm:p-6", t.modal)}
             initial={{ scale: 0.96, y: 20, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
             exit={{ scale: 0.96, y: 20, opacity: 0 }}
@@ -354,165 +354,167 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
               </div>
             )}
 
-            <section className={cx("mb-4", panelClass)}>
-              <SectionIntro t={t} icon={<Database size={17} />} title="Status">
-                Krótki podgląd tego, gdzie aktualnie znajduje się baza i czy przeglądarka nadal przechowuje kopię.
-              </SectionIntro>
+            <div className="grid gap-4 xl:grid-cols-2">
+              <section className={panelClass}>
+                <SectionIntro t={t} icon={<Database size={17} />} title="Status">
+                  Krótki podgląd tego, gdzie aktualnie znajduje się baza i czy przeglądarka nadal przechowuje kopię.
+                </SectionIntro>
 
-              <dl className={cx("divide-y", t.divider)}>
-                <StatusLine
-                  t={t}
-                  label="Kopia w przeglądarce"
-                  value={storageCopyDetected ? "Wykryto dane w znanych kluczach localStorage." : "Nie wykryto danych w znanych kluczach localStorage."}
-                />
-                <StatusLine
-                  t={t}
-                  label="Zapis do localStorage"
-                  value={browserPersistenceDisabled ? "Zatrzymany w tej sesji." : "Aktywny tylko, gdy nie ma sesji plikowej."}
-                />
-                <StatusLine
-                  t={t}
-                  label="Tryb plikowy"
-                  value={fileSystemSupported ? "Dostępny w tej przeglądarce." : "Niedostępny — użyj Chrome/Edge albo pobrania pliku."}
-                />
-                <StatusLine
-                  t={t}
-                  label="Aktywna baza"
-                  value={fileSession.active ? `${fileSession.fileName} · ostatni zapis: ${formatSessionTime(fileSession.lastSavedAt)}` : "Brak otwartej sesji plikowej."}
-                  strong={fileSession.active}
-                />
-              </dl>
-            </section>
-
-            <section className={cx("mb-4", panelClass)}>
-              <SectionIntro t={t} icon={<HardDrive size={17} />} title="Otwórz zaszyfrowany plik">
-                Użyj, gdy chcesz przełączyć tablicę na inny plik roboczy albo ponownie otworzyć bazę po zablokowaniu.
-              </SectionIntro>
-
-              <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-                <label className="grid gap-1.5 text-xs font-black">
-                  Hasło do bazy
-                  <input
-                    type="password"
-                    value={openPassword}
-                    onChange={(event) => setOpenPassword(event.target.value)}
-                    className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
-                    placeholder="Hasło pliku roboczego"
+                <dl className={cx("divide-y", t.divider)}>
+                  <StatusLine
+                    t={t}
+                    label="Kopia w przeglądarce"
+                    value={storageCopyDetected ? "Wykryto dane w znanych kluczach localStorage." : "Nie wykryto danych w znanych kluczach localStorage."}
                   />
-                </label>
-                <button
-                  type="button"
-                  onClick={openEncryptedFileSession}
-                  disabled={busy || !fileSystemSupported}
-                  className={quietButtonClass}
-                >
-                  <HardDrive size={15} /> {busy ? "Otwieram..." : "Otwórz plik"}
-                </button>
-              </div>
-
-              <p className={cx("mt-3 text-xs font-semibold leading-5", t.textSoft)}>
-                Hasło zostaje tylko w pamięci strony. Po otwarciu pliku zapis do localStorage zostaje zatrzymany w tej sesji.
-              </p>
-            </section>
-
-            <section className={cx("mb-4", panelClass)}>
-              <SectionIntro t={t} icon={<ShieldCheck size={17} />} title="Zaszyfruj aktualny stan">
-                Przydatne przy migracji starej bazy albo gdy chcesz utworzyć dodatkowy zaszyfrowany plik.
-              </SectionIntro>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1.5 text-xs font-black">
-                  Hasło do bazy
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(event) => {
-                      setPassword(event.target.value);
-                      setEncryptedText("");
-                      setLastFileSaveName("");
-                    }}
-                    className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
-                    placeholder="Minimum 8 znaków"
+                  <StatusLine
+                    t={t}
+                    label="Zapis do localStorage"
+                    value={browserPersistenceDisabled ? "Zatrzymany w tej sesji." : "Aktywny tylko, gdy nie ma sesji plikowej."}
                   />
-                </label>
-                <label className="grid gap-1.5 text-xs font-black">
-                  Powtórz hasło
-                  <input
-                    type="password"
-                    value={passwordRepeat}
-                    onChange={(event) => {
-                      setPasswordRepeat(event.target.value);
-                      setEncryptedText("");
-                      setLastFileSaveName("");
-                    }}
-                    className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
-                    placeholder="To samo hasło"
+                  <StatusLine
+                    t={t}
+                    label="Tryb plikowy"
+                    value={fileSystemSupported ? "Dostępny w tej przeglądarce." : "Niedostępny — użyj Chrome/Edge albo pobrania pliku."}
                   />
-                </label>
-              </div>
+                  <StatusLine
+                    t={t}
+                    label="Aktywna baza"
+                    value={fileSession.active ? `${fileSession.fileName} · ostatni zapis: ${formatSessionTime(fileSession.lastSavedAt)}` : "Brak otwartej sesji plikowej."}
+                    strong={fileSession.active}
+                  />
+                </dl>
+              </section>
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={saveEncryptedDatabaseToSelectedFile}
-                  disabled={busy || !fileSystemSupported}
-                  className={quietButtonClass}
-                >
-                  <HardDrive size={15} /> {busy ? "Szyfruję..." : "Zapisz do pliku"}
-                </button>
-                <button
-                  type="button"
-                  onClick={downloadEncryptedDatabase}
-                  disabled={busy}
-                  className={quietButtonClass}
-                >
-                  <Download size={15} /> Pobierz plik
-                </button>
-                <button
-                  type="button"
-                  onClick={copyEncryptedDatabase}
-                  disabled={busy}
-                  className={quietButtonClass}
-                >
-                  {copied ? <CheckCircle2 size={15} /> : <ShieldCheck size={15} />} {copied ? "Skopiowano" : "Kopiuj treść"}
-                </button>
-              </div>
+              <section className={panelClass}>
+                <SectionIntro t={t} icon={<HardDrive size={17} />} title="Otwórz zaszyfrowany plik">
+                  Użyj, gdy chcesz przełączyć tablicę na inny plik roboczy albo ponownie otworzyć bazę po zablokowaniu.
+                </SectionIntro>
 
-              {lastFileSaveName && (
-                <p className={cx("mt-3", subtleInfoClass)}>
-                  Plik roboczy zapisany: {lastFileSaveName}
+                <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                  <label className="grid gap-1.5 text-xs font-black">
+                    Hasło do bazy
+                    <input
+                      type="password"
+                      value={openPassword}
+                      onChange={(event) => setOpenPassword(event.target.value)}
+                      className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
+                      placeholder="Hasło pliku roboczego"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={openEncryptedFileSession}
+                    disabled={busy || !fileSystemSupported}
+                    className={quietButtonClass}
+                  >
+                    <HardDrive size={15} /> {busy ? "Otwieram..." : "Otwórz plik"}
+                  </button>
+                </div>
+
+                <p className={cx("mt-3 text-xs font-semibold leading-5", t.textSoft)}>
+                  Hasło zostaje tylko w pamięci strony. Po otwarciu pliku zapis do localStorage zostaje zatrzymany w tej sesji.
                 </p>
-              )}
+              </section>
 
-              {encryptedText && (
-                <textarea
-                  value={encryptedText}
-                  readOnly
-                  spellCheck={false}
-                  className={cx("mt-3 h-40 w-full resize-none rounded-2xl border p-3 font-mono text-[11px] leading-5 outline-none", t.inputSolid)}
-                  onFocus={(event) => event.target.select()}
-                />
-              )}
-            </section>
+              <section className={panelClass}>
+                <SectionIntro t={t} icon={<ShieldCheck size={17} />} title="Zaszyfruj aktualny stan">
+                  Przydatne przy migracji starej bazy albo gdy chcesz utworzyć dodatkowy zaszyfrowany plik.
+                </SectionIntro>
 
-            <section className={panelClass}>
-              <SectionIntro t={t} icon={<Trash2 size={17} />} title="Stara kopia w przeglądarce">
-                Użyj dopiero po zapisaniu zaszyfrowanego pliku i pozytywnym teście otwierania bazy.
-              </SectionIntro>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="grid gap-1.5 text-xs font-black">
+                    Hasło do bazy
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(event) => {
+                        setPassword(event.target.value);
+                        setEncryptedText("");
+                        setLastFileSaveName("");
+                      }}
+                      className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
+                      placeholder="Minimum 8 znaków"
+                    />
+                  </label>
+                  <label className="grid gap-1.5 text-xs font-black">
+                    Powtórz hasło
+                    <input
+                      type="password"
+                      value={passwordRepeat}
+                      onChange={(event) => {
+                        setPasswordRepeat(event.target.value);
+                        setEncryptedText("");
+                        setLastFileSaveName("");
+                      }}
+                      className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
+                      placeholder="To samo hasło"
+                    />
+                  </label>
+                </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={clearBrowserCopy}
-                  className={cx("inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5", t.dangerButton)}
-                >
-                  <Trash2 size={15} /> Usuń starą kopię
-                </button>
-                <p className={cx("max-w-xl text-xs font-semibold leading-5", t.textMuted)}>
-                  Otwarta sesja plikowa zapisuje zmiany do zaszyfrowanego pliku. localStorage zostaje tylko trybem awaryjnym, gdy nie pracujesz na pliku.
-                </p>
-              </div>
-            </section>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={saveEncryptedDatabaseToSelectedFile}
+                    disabled={busy || !fileSystemSupported}
+                    className={quietButtonClass}
+                  >
+                    <HardDrive size={15} /> {busy ? "Szyfruję..." : "Zapisz do pliku"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={downloadEncryptedDatabase}
+                    disabled={busy}
+                    className={quietButtonClass}
+                  >
+                    <Download size={15} /> Pobierz plik
+                  </button>
+                  <button
+                    type="button"
+                    onClick={copyEncryptedDatabase}
+                    disabled={busy}
+                    className={quietButtonClass}
+                  >
+                    {copied ? <CheckCircle2 size={15} /> : <ShieldCheck size={15} />} {copied ? "Skopiowano" : "Kopiuj treść"}
+                  </button>
+                </div>
+
+                {lastFileSaveName && (
+                  <p className={cx("mt-3", subtleInfoClass)}>
+                    Plik roboczy zapisany: {lastFileSaveName}
+                  </p>
+                )}
+
+                {encryptedText && (
+                  <textarea
+                    value={encryptedText}
+                    readOnly
+                    spellCheck={false}
+                    className={cx("mt-3 h-36 w-full resize-none rounded-2xl border p-3 font-mono text-[11px] leading-5 outline-none", t.inputSolid)}
+                    onFocus={(event) => event.target.select()}
+                  />
+                )}
+              </section>
+
+              <section className={panelClass}>
+                <SectionIntro t={t} icon={<Trash2 size={17} />} title="Stara kopia w przeglądarce">
+                  Użyj dopiero po zapisaniu zaszyfrowanego pliku i pozytywnym teście otwierania bazy.
+                </SectionIntro>
+
+                <div className="grid gap-3">
+                  <button
+                    type="button"
+                    onClick={clearBrowserCopy}
+                    className={cx("inline-flex w-fit items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5", t.dangerButton)}
+                  >
+                    <Trash2 size={15} /> Usuń starą kopię
+                  </button>
+                  <p className={cx("text-xs font-semibold leading-5", t.textMuted)}>
+                    Otwarta sesja plikowa zapisuje zmiany do zaszyfrowanego pliku. localStorage zostaje tylko trybem awaryjnym, gdy nie pracujesz na pliku.
+                  </p>
+                </div>
+              </section>
+            </div>
           </motion.div>
         </motion.div>
       )}
