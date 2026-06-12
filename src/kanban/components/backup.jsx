@@ -80,11 +80,8 @@ function TextPreview({ t, label, children }) {
   );
 }
 
-export function ExportBackupModal({ t, open, backupText, fileName, onClose, onDownload }) {
-  const textareaRef = useRef(null);
-  const [copied, setCopied] = useState(false);
+export function ExportBackupModal({ t, open, backupText, fileName, onClose }) {
   const [encryptedCopied, setEncryptedCopied] = useState(false);
-  const [downloadNotice, setDownloadNotice] = useState("");
   const [encryptionNotice, setEncryptionNotice] = useState("");
   const [databasePassword, setDatabasePassword] = useState("");
   const [databasePasswordRepeat, setDatabasePasswordRepeat] = useState("");
@@ -92,23 +89,13 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose, onDo
   const [encrypting, setEncrypting] = useState(false);
 
   useEffect(() => {
-    setDownloadNotice("");
     setEncryptionNotice("");
-    setCopied(false);
     setEncryptedCopied(false);
     setDatabasePassword("");
     setDatabasePasswordRepeat("");
     setEncryptedText("");
     setEncrypting(false);
   }, [open, backupText]);
-
-  function selectBackupText() {
-    window.setTimeout(() => {
-      textareaRef.current?.focus();
-      textareaRef.current?.select();
-    }, 0);
-    setDownloadNotice("Zaznaczono treść. Skopiuj ją ręcznie jako plik JSON.");
-  }
 
   function validateEncryptionPassword() {
     const password = databasePassword.trim();
@@ -179,169 +166,100 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose, onDo
     }
   }
 
-  async function handleDownloadClick() {
-    setDownloadNotice("Próbuję pobrać zwykły JSON...");
-    const result = await onDownload?.();
-    if (result?.reason === "cancelled") {
-      setDownloadNotice("Zapisywanie anulowane.");
-      return;
-    }
-    if (result?.ok) {
-      setDownloadNotice("Zwykły JSON przekazany do pobrania/zapisu.");
-      return;
-    }
-    setDownloadNotice("Pobieranie zablokowane. Skopiuj treść ręcznie.");
-  }
-
-  async function copyBackupText() {
-    try {
-      await navigator.clipboard.writeText(backupText);
-      setCopied(true);
-      setDownloadNotice("Skopiowano zwykły JSON.");
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      selectBackupText();
-    }
-  }
-
   return (
     <AnimatePresence>
       {open && (
         <motion.div className={cx("fixed inset-0 z-40 flex items-center justify-center p-4 backdrop-blur-sm", t.overlay)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={onClose}>
-          <motion.div className={cx("max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[2rem] border p-5 shadow-2xl sm:p-6", t.modal)} initial={{ scale: 0.96, y: 20, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.96, y: 20, opacity: 0 }} onMouseDown={(event) => event.stopPropagation()}>
+          <motion.div className={cx("max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[2rem] border p-5 shadow-2xl sm:p-6", t.modal)} initial={{ scale: 0.96, y: 20, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.96, y: 20, opacity: 0 }} onMouseDown={(event) => event.stopPropagation()}>
             <div className="mb-1 flex items-start justify-between gap-4">
               <ModalHeader
                 t={t}
-                icon={<Upload size={18} />}
+                icon={<ShieldCheck size={18} />}
                 title="Eksport"
-                hint="Zapisz kopię tablicy. Dla pracy służbowej wybierz plik szyfrowany."
+                hint="Eksport jest dostępny wyłącznie jako zaszyfrowany plik."
               />
               <button type="button" onClick={onClose} className={cx("rounded-2xl p-2 transition", t.hoverSoft, t.textMuted)}><X /></button>
             </div>
 
             <div className={cx("mb-4 flex flex-wrap items-center gap-2 border-b pb-4", t.divider)}>
               <span className={cx("rounded-full border px-3 py-1 text-[11px] font-black", t.successButton)}>
-                Zalecane: szyfrowany
-              </span>
-              <span className={cx("rounded-full border px-3 py-1 text-[11px] font-bold", t.buttonSoft)}>
-                JSON: awaryjnie
+                Tylko szyfrowany
               </span>
               <span className={cx("min-w-0 truncate text-[11px] font-semibold", t.textSoft)} title={fileName}>
                 {fileName}
               </span>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-[1fr_18rem]">
-              <ActionCard
-                t={t}
-                icon={<ShieldCheck size={18} />}
-                title="Plik szyfrowany"
-                subtitle="Hasło + pobranie zaszyfrowanej bazy."
-                className="min-w-0"
-              >
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="grid gap-1 text-xs font-black">
-                    Hasło
-                    <input
-                      type="password"
-                      value={databasePassword}
-                      onChange={(event) => {
-                        setDatabasePassword(event.target.value);
-                        setEncryptedText("");
-                      }}
-                      className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
-                      placeholder="Minimum 8 znaków"
-                    />
-                  </label>
+            <ActionCard
+              t={t}
+              icon={<ShieldCheck size={18} />}
+              title="Plik szyfrowany"
+              subtitle="Ustaw hasło i zapisz bezpieczną kopię tablicy."
+              className="min-w-0"
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="grid gap-1 text-xs font-black">
+                  Hasło
+                  <input
+                    type="password"
+                    value={databasePassword}
+                    onChange={(event) => {
+                      setDatabasePassword(event.target.value);
+                      setEncryptedText("");
+                    }}
+                    className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
+                    placeholder="Minimum 8 znaków"
+                  />
+                </label>
 
-                  <label className="grid gap-1 text-xs font-black">
-                    Powtórz hasło
-                    <input
-                      type="password"
-                      value={databasePasswordRepeat}
-                      onChange={(event) => {
-                        setDatabasePasswordRepeat(event.target.value);
-                        setEncryptedText("");
-                      }}
-                      className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
-                      placeholder="To samo hasło"
-                    />
-                  </label>
-                </div>
+                <label className="grid gap-1 text-xs font-black">
+                  Powtórz hasło
+                  <input
+                    type="password"
+                    value={databasePasswordRepeat}
+                    onChange={(event) => {
+                      setDatabasePasswordRepeat(event.target.value);
+                      setEncryptedText("");
+                    }}
+                    className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
+                    placeholder="To samo hasło"
+                  />
+                </label>
+              </div>
 
-                <InlineNotice t={t}>{encryptionNotice}</InlineNotice>
+              <InlineNotice t={t}>{encryptionNotice}</InlineNotice>
 
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={handleEncryptedDownloadClick}
-                    disabled={encrypting}
-                    className={cx("inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.actionPrimary)}
-                  >
-                    <ShieldCheck size={15} /> {encrypting ? "Szyfruję..." : "Pobierz"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={copyEncryptedBackupText}
-                    disabled={encrypting}
-                    className={cx("inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.buttonSoft)}
-                  >
-                    {encryptedCopied ? <CheckCircle2 size={15} /> : <BookOpen size={15} />} {encryptedCopied ? "Skopiowano" : "Kopiuj"}
-                  </button>
-                </div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={handleEncryptedDownloadClick}
+                  disabled={encrypting}
+                  className={cx("inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.actionPrimary)}
+                >
+                  <ShieldCheck size={15} /> {encrypting ? "Szyfruję..." : "Pobierz"}
+                </button>
+                <button
+                  type="button"
+                  onClick={copyEncryptedBackupText}
+                  disabled={encrypting}
+                  className={cx("inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.buttonSoft)}
+                >
+                  {encryptedCopied ? <CheckCircle2 size={15} /> : <BookOpen size={15} />} {encryptedCopied ? "Skopiowano" : "Kopiuj"}
+                </button>
+              </div>
 
-                {encryptedText && (
-                  <TextPreview t={t} label="Pokaż zaszyfrowaną treść">
-                    <textarea
-                      value={encryptedText}
-                      readOnly
-                      spellCheck={false}
-                      className={cx("h-40 w-full resize-none rounded-2xl border p-3 font-mono text-[11px] leading-5 outline-none", t.inputSolid)}
-                      onFocus={(event) => event.target.select()}
-                    />
-                  </TextPreview>
-                )}
-              </ActionCard>
-
-              <ActionCard
-                t={t}
-                icon={<BookOpen size={18} />}
-                title="JSON"
-                subtitle="Tylko awaryjnie."
-                muted
-                className="min-w-0"
-              >
-                <div className="grid gap-2">
-                  <button
-                    type="button"
-                    onClick={copyBackupText}
-                    className={cx("inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5", t.buttonSoft)}
-                  >
-                    {copied ? <CheckCircle2 size={15} /> : <BookOpen size={15} />} {copied ? "Skopiowano" : "Kopiuj"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDownloadClick}
-                    className={cx("inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5", t.buttonSoft)}
-                  >
-                    <Upload size={15} /> Pobierz
-                  </button>
-                </div>
-
-                <InlineNotice t={t}>{downloadNotice}</InlineNotice>
-
-                <TextPreview t={t} label="Pokaż JSON">
+              {encryptedText && (
+                <TextPreview t={t} label="Pokaż zaszyfrowaną treść">
                   <textarea
-                    ref={textareaRef}
-                    value={backupText}
+                    value={encryptedText}
                     readOnly
                     spellCheck={false}
-                    className={cx("h-56 w-full resize-none rounded-2xl border p-3 font-mono text-[11px] leading-5 outline-none", t.inputSolid)}
+                    className={cx("h-40 w-full resize-none rounded-2xl border p-3 font-mono text-[11px] leading-5 outline-none", t.inputSolid)}
                     onFocus={(event) => event.target.select()}
                   />
                 </TextPreview>
-              </ActionCard>
-            </div>
+              )}
+            </ActionCard>
           </motion.div>
         </motion.div>
       )}
