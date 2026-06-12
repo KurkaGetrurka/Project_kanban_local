@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, HardDrive, ShieldCheck } from "lucide-react";
 
 import { SecurityDatabaseModal } from "./security-database.jsx";
@@ -25,6 +25,7 @@ import {
 import { getLiveBoardSnapshot } from "../security/liveBoardSnapshot.js";
 
 const STATUS_TOAST_TIMEOUT_MS = 4200;
+const AUTOSAVE_BLINK_TIMEOUT_MS = 1100;
 
 function readStoredBoardState() {
   const keys = [STORAGE_KEY, ...LEGACY_KEYS];
@@ -145,11 +146,16 @@ export function SecurityDatabaseLauncher() {
   const [themeMode, setThemeMode] = useState(() => getCurrentThemeMode());
   const [databaseStatus, setDatabaseStatus] = useState(() => buildDatabaseStatus());
   const [statusVisible, setStatusVisible] = useState(false);
+  const [saveBlinkActive, setSaveBlinkActive] = useState(false);
+  const saveBlinkTimerRef = useRef(null);
 
   const t = useMemo(() => buildPanelTheme(themeMode), [themeMode]);
   const launcherButtonTheme = themeMode === "dark"
     ? "border-violet-300/40 bg-slate-950/85 text-white hover:bg-slate-900"
     : "border-violet-200 bg-white/90 text-slate-800 shadow-violet-200/40 hover:bg-violet-50";
+  const launcherSaveBlinkTheme = themeMode === "dark"
+    ? "border-emerald-300/80 bg-emerald-500/20 text-emerald-50 shadow-emerald-400/40 ring-4 ring-emerald-400/25"
+    : "border-emerald-300 bg-emerald-50 text-emerald-900 shadow-emerald-200/80 ring-4 ring-emerald-200/80";
   const lockButtonTheme = themeMode === "dark"
     ? "border-rose-300/40 bg-rose-950/95 text-rose-50 hover:bg-rose-900"
     : "border-rose-200 bg-rose-50/95 text-rose-800 shadow-rose-100/60 hover:bg-rose-100";
@@ -176,6 +182,20 @@ export function SecurityDatabaseLauncher() {
     setDatabaseStatus(buildDatabaseStatus(extra));
   }
 
+  function triggerSaveBlink() {
+    if (typeof window === "undefined") return;
+
+    if (saveBlinkTimerRef.current) {
+      window.clearTimeout(saveBlinkTimerRef.current);
+    }
+
+    setSaveBlinkActive(true);
+    saveBlinkTimerRef.current = window.setTimeout(() => {
+      setSaveBlinkActive(false);
+      saveBlinkTimerRef.current = null;
+    }, AUTOSAVE_BLINK_TIMEOUT_MS);
+  }
+
   useEffect(() => {
     if (!statusVisible) return undefined;
 
@@ -185,6 +205,14 @@ export function SecurityDatabaseLauncher() {
 
     return () => window.clearTimeout(timer);
   }, [statusVisible, databaseStatus]);
+
+  useEffect(() => {
+    return () => {
+      if (saveBlinkTimerRef.current) {
+        window.clearTimeout(saveBlinkTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -200,6 +228,10 @@ export function SecurityDatabaseLauncher() {
       setThemeMode(getCurrentThemeMode());
       setBackupText(buildCurrentBackupText());
       setDatabaseStatus(buildDatabaseStatus({ lastError: "" }));
+
+      if (event?.type === "kanban-file-database-saved") {
+        triggerSaveBlink();
+      }
 
       if (event?.type !== "kanban-file-database-saved" && event?.type !== "kanban-live-board-snapshot-changed") {
         setStatusVisible(true);
@@ -289,8 +321,8 @@ export function SecurityDatabaseLauncher() {
         type="button"
         onClick={openSecurityPanel}
         className={cx(
-          "fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-xs font-black shadow-2xl backdrop-blur-2xl transition hover:-translate-y-0.5",
-          launcherButtonTheme
+          "fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-xs font-black shadow-2xl backdrop-blur-2xl transition duration-300 hover:-translate-y-0.5",
+          saveBlinkActive ? cx("animate-pulse scale-[1.03]", launcherSaveBlinkTheme) : launcherButtonTheme
         )}
         title={`${statusCopy.title}. Kliknij, aby otworzyć bazę danych i szyfrowanie.`}
       >
