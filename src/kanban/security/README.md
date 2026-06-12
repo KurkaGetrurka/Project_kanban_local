@@ -27,12 +27,34 @@ Używany schemat:
 - moduł `encryptedDatabase.js`,
 - eksport zaszyfrowanej bazy z poziomu okna eksportu,
 - import zaszyfrowanej bazy z pliku lub wklejonej treści,
-- obsługa błędnego hasła bez ujawniania danych.
+- obsługa błędnego hasła bez ujawniania danych,
+- moduł `browserStoragePolicy.js` do wykrywania i czyszczenia starej kopii z `localStorage`,
+- komponent `SecurityDatabaseModal` z procesem migracji: zaszyfruj aktualny stan, przetestuj import, usuń starą kopię z przeglądarki,
+- eksport komponentu migracji z `src/kanban/components.jsx`.
+
+## Ważna uwaga o czyszczeniu localStorage
+
+Samo usunięcie kluczy z `localStorage` nie wystarczy, jeśli główny hook aplikacji nadal automatycznie zapisuje stan przy każdej zmianie. Dlatego `browserStoragePolicy.js` ma flagę sesyjną `kanban-browser-persistence-disabled-session` oraz funkcję `shouldPersistToBrowserStorage()`.
+
+Następny krok techniczny to podpięcie tej funkcji w `useKanbanBoard.jsx`, w miejscu gdzie obecnie wykonywane jest:
+
+```js
+safeStorageSetItem(STORAGE_KEY, JSON.stringify(persistedBoardState));
+```
+
+Docelowo zapis powinien wyglądać logicznie tak:
+
+```js
+if (shouldPersistToBrowserStorage()) {
+  safeStorageSetItem(STORAGE_KEY, JSON.stringify(persistedBoardState));
+}
+```
 
 ## Do zrobienia w kolejnych etapach
 
-1. Przenieść główny zapis z `localStorage` do wybranego pliku bazy przez File System Access API.
-2. Dodać ekran startowy: `Otwórz bazę`, `Utwórz bazę`, `Zaszyfruj istniejącą bazę`.
-3. Dodać status bazy: `zaszyfrowana`, `niezapisane zmiany`, `zapisano`, `stare dane w przeglądarce`.
-4. Dodać przycisk `Wyczyść stare dane z przeglądarki` po udanym zapisie zaszyfrowanej bazy.
-5. Dodać blokadę bazy, która czyści odszyfrowane dane z pamięci aplikacji.
+1. Podpiąć `SecurityDatabaseModal` do górnego paska aplikacji jako przycisk `Baza` / `Bezpieczeństwo`.
+2. Podpiąć `shouldPersistToBrowserStorage()` w `useKanbanBoard.jsx`, aby po czyszczeniu stara baza nie wracała do `localStorage` przy kolejnej zmianie.
+3. Przenieść główny zapis z `localStorage` do wybranego pliku bazy przez File System Access API.
+4. Dodać ekran startowy: `Otwórz bazę`, `Utwórz bazę`, `Zaszyfruj istniejącą bazę`.
+5. Dodać status bazy: `zaszyfrowana`, `niezapisane zmiany`, `zapisano`, `stare dane w przeglądarce`.
+6. Dodać blokadę bazy, która czyści odszyfrowane dane z pamięci aplikacji.
