@@ -100,15 +100,15 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose }) {
   function validateEncryptionPassword() {
     const password = databasePassword.trim();
     if (!password) {
-      setEncryptionNotice("Podaj hasło do zaszyfrowania bazy.");
+      setEncryptionNotice("Wpisz hasło do pliku.");
       return null;
     }
     if (password.length < 8) {
-      setEncryptionNotice("Hasło powinno mieć minimum 8 znaków.");
+      setEncryptionNotice("Hasło musi mieć co najmniej 8 znaków.");
       return null;
     }
     if (password !== databasePasswordRepeat.trim()) {
-      setEncryptionNotice("Hasła nie są takie same.");
+      setEncryptionNotice("Wpisane hasła różnią się.");
       return null;
     }
     return password;
@@ -119,17 +119,17 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose }) {
     if (!password) return "";
 
     setEncrypting(true);
-    setEncryptionNotice("Szyfruję bazę...");
+    setEncryptionNotice("Przygotowuję plik...");
 
     try {
       const plainPayload = parseBackupText(backupText);
       const encryptedPayload = await encryptKanbanDatabase(plainPayload, password);
       const nextEncryptedText = JSON.stringify(encryptedPayload, null, 2);
       setEncryptedText(nextEncryptedText);
-      setEncryptionNotice("Gotowe. Plik można pobrać albo skopiować.");
+      setEncryptionNotice("Plik jest gotowy do pobrania.");
       return nextEncryptedText;
     } catch (error) {
-      setEncryptionNotice(error.message || "Nie udało się zaszyfrować bazy.");
+      setEncryptionNotice(error.message || "Nie udało się przygotować pliku.");
       return "";
     } finally {
       setEncrypting(false);
@@ -142,14 +142,14 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose }) {
 
     const result = await downloadTextFile(encryptedBackupFileName(fileName), text);
     if (result?.reason === "cancelled") {
-      setEncryptionNotice("Zapisywanie anulowane.");
+      setEncryptionNotice("Zapis pliku został anulowany.");
       return;
     }
     if (result?.ok) {
-      setEncryptionNotice("Zaszyfrowany plik przekazany do pobrania/zapisu.");
+      setEncryptionNotice("Plik został przekazany do pobrania.");
       return;
     }
-    setEncryptionNotice("Pobranie zablokowane. Użyj kopiowania treści.");
+    setEncryptionNotice("Pobieranie nie powiodło się. Skopiuj treść pliku i zapisz ją ręcznie.");
   }
 
   async function copyEncryptedBackupText() {
@@ -159,10 +159,10 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose }) {
     try {
       await navigator.clipboard.writeText(text);
       setEncryptedCopied(true);
-      setEncryptionNotice("Skopiowano zaszyfrowaną treść.");
+      setEncryptionNotice("Treść pliku została skopiowana.");
       setTimeout(() => setEncryptedCopied(false), 1800);
     } catch {
-      setEncryptionNotice("Nie udało się skopiować automatycznie. Rozwiń podgląd i skopiuj ręcznie.");
+      setEncryptionNotice("Nie udało się skopiować treści. Użyj sekcji zaawansowanej.");
     }
   }
 
@@ -175,31 +175,31 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose }) {
               <ModalHeader
                 t={t}
                 icon={<ShieldCheck size={18} />}
-                title="Eksport"
-                hint="Eksport jest dostępny wyłącznie jako zaszyfrowany plik."
+                title="Eksport kopii"
+                hint="Utwórz zabezpieczony plik kopii zapasowej tablicy."
               />
               <button type="button" onClick={onClose} className={cx("rounded-2xl p-2 transition", t.hoverSoft, t.textMuted)}><X /></button>
             </div>
 
             <div className={cx("mb-4 flex flex-wrap items-center gap-2 border-b pb-4", t.divider)}>
               <span className={cx("rounded-full border px-3 py-1 text-[11px] font-black", t.successButton)}>
-                Tylko szyfrowany
+                Format: szyfrowany plik
               </span>
               <span className={cx("min-w-0 truncate text-[11px] font-semibold", t.textSoft)} title={fileName}>
-                {fileName}
+                Nazwa: {fileName}
               </span>
             </div>
 
             <ActionCard
               t={t}
               icon={<ShieldCheck size={18} />}
-              title="Plik szyfrowany"
-              subtitle="Ustaw hasło i zapisz bezpieczną kopię tablicy."
+              title="Zabezpieczona kopia"
+              subtitle="Plik będzie wymagał hasła przy imporcie."
               className="min-w-0"
             >
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="grid gap-1 text-xs font-black">
-                  Hasło
+                  Hasło do pliku
                   <input
                     type="password"
                     value={databasePassword}
@@ -222,7 +222,7 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose }) {
                       setEncryptedText("");
                     }}
                     className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
-                    placeholder="To samo hasło"
+                    placeholder="Wpisz ponownie"
                   />
                 </label>
               </div>
@@ -236,7 +236,7 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose }) {
                   disabled={encrypting}
                   className={cx("inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black shadow-lg transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.actionPrimary)}
                 >
-                  <ShieldCheck size={15} /> {encrypting ? "Szyfruję..." : "Pobierz"}
+                  <ShieldCheck size={15} /> {encrypting ? "Przygotowuję..." : "Pobierz plik"}
                 </button>
                 <button
                   type="button"
@@ -244,12 +244,12 @@ export function ExportBackupModal({ t, open, backupText, fileName, onClose }) {
                   disabled={encrypting}
                   className={cx("inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.buttonSoft)}
                 >
-                  {encryptedCopied ? <CheckCircle2 size={15} /> : <BookOpen size={15} />} {encryptedCopied ? "Skopiowano" : "Kopiuj"}
+                  {encryptedCopied ? <CheckCircle2 size={15} /> : <BookOpen size={15} />} {encryptedCopied ? "Skopiowano" : "Kopiuj treść"}
                 </button>
               </div>
 
               {encryptedText && (
-                <TextPreview t={t} label="Pokaż zaszyfrowaną treść">
+                <TextPreview t={t} label="Zaawansowane: pokaż treść pliku">
                   <textarea
                     value={encryptedText}
                     readOnly
