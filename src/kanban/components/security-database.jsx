@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, Database, Download, HardDrive, ShieldCheck, Trash2, X } from "lucide-react";
 
@@ -30,32 +30,44 @@ function encryptedDatabaseFileName(fileName = "kanban-baza.json") {
 function formatSessionTime(value) {
   if (!value) return "brak";
   try {
-    return new Date(value).toLocaleString("pl-PL");
+    return new Date(value).toLocaleString("pl-PL", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   } catch {
     return value;
   }
 }
 
-function SectionIntro({ t, icon, title, children }) {
+function StatusPill({ t, active, label, value, title }) {
   return (
-    <div className="mb-4 flex items-start gap-3">
-      <span className={cx("mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ring-1", t.chip)}>
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <h3 className="text-sm font-black">{title}</h3>
-        {children && <p className={cx("mt-1 text-xs font-semibold leading-5", t.textSoft)}>{children}</p>}
-      </div>
-    </div>
+    <span
+      className={cx(
+        "inline-flex min-h-9 items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-black",
+        active ? t.successButton : t.buttonSoft
+      )}
+      title={title}
+    >
+      <span className={cx("h-2 w-2 rounded-full", active ? "bg-emerald-400" : "bg-slate-400")} />
+      <span>{label}</span>
+      {value && <span className={cx("max-w-[14rem] truncate font-semibold", active ? "" : t.textMuted)}>{value}</span>}
+    </span>
   );
 }
 
-function StatusLine({ t, label, value, strong = false }) {
+function ActionCard({ t, icon, title, children, titleHint }) {
   return (
-    <div className={cx("grid gap-1 py-2.5 text-xs sm:grid-cols-[10rem_1fr] sm:gap-4", t.divider)}>
-      <dt className={cx("font-black", t.textSoft)}>{label}</dt>
-      <dd className={cx("font-semibold leading-5", strong ? "" : t.textMuted)}>{value}</dd>
-    </div>
+    <section className={cx("flex min-h-[18rem] flex-col rounded-[1.35rem] border p-4 sm:p-5", t.cardSolid)} title={titleHint}>
+      <div className="mb-4 flex items-center gap-3">
+        <span className={cx("flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ring-1", t.chip)}>
+          {icon}
+        </span>
+        <h3 className="text-sm font-black">{title}</h3>
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -73,18 +85,14 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
   const [lastFileSaveName, setLastFileSaveName] = useState("");
   const [fileSession, setFileSession] = useState(() => getActiveFileDatabaseSummary());
 
-  const storageSummary = useMemo(() => {
-    const keys = [STORAGE_KEY, ...LEGACY_KEYS];
-    return {
-      keys,
-      currentKey: STORAGE_KEY,
-      legacyCount: LEGACY_KEYS.length,
-    };
-  }, []);
-
-  const panelClass = cx("rounded-[1.5rem] border p-4 sm:p-5", t.cardSolid);
-  const subtleInfoClass = cx("rounded-2xl px-3 py-2 text-xs font-semibold leading-5", t.subtle);
-  const quietButtonClass = cx("inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40", t.buttonSoft);
+  const quietButtonClass = cx(
+    "inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40",
+    t.buttonSoft
+  );
+  const inputClass = cx(
+    "rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4",
+    t.inputSolid
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -109,10 +117,6 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
       const summary = getActiveFileDatabaseSummary();
       setFileSession(summary);
 
-      if (event?.type === "kanban-file-database-saved") {
-        setNotice(`Zapisano zmiany do pliku: ${summary.fileName || "wybrany plik"}.`);
-      }
-
       if (event?.type === "kanban-file-database-save-error") {
         setNotice(event.detail?.message || "Nie udało się automatycznie zapisać zmian do pliku.");
       }
@@ -136,11 +140,11 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
       return "";
     }
     if (nextPassword.length < 8) {
-      setNotice("Hasło powinno mieć minimum 8 znaków. Sejf z hasłem 1234 robi smutne piiip.");
+      setNotice("Hasło powinno mieć minimum 8 znaków.");
       return "";
     }
     if (nextPassword !== passwordRepeat.trim()) {
-      setNotice("Hasła nie są takie same. Popraw drugie pole przed szyfrowaniem.");
+      setNotice("Hasła nie są takie same.");
       return "";
     }
     return nextPassword;
@@ -151,14 +155,14 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
     if (!nextPassword) return "";
 
     setBusy(true);
-    setNotice("Szyfruję aktualną bazę. Po pobraniu pliku sprawdź go importem testowym, zanim usuniesz starą kopię z przeglądarki.");
+    setNotice("Szyfruję bazę...");
 
     try {
       const payload = parseBackupText(backupText);
       const encryptedPayload = await encryptKanbanDatabase(payload, nextPassword);
       const nextEncryptedText = JSON.stringify(encryptedPayload, null, 2);
       setEncryptedText(nextEncryptedText);
-      setNotice("Baza została zaszyfrowana. Pobierz plik albo zapisz go jako plik roboczy, a potem wykonaj test importu.");
+      setNotice("Baza zaszyfrowana.");
       return nextEncryptedText;
     } catch (error) {
       setNotice(error.message || "Nie udało się zaszyfrować aktualnej bazy.");
@@ -174,19 +178,19 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
 
     const result = await downloadTextFile(encryptedDatabaseFileName(fileName), text);
     if (result?.reason === "cancelled") {
-      setNotice("Zapisywanie zaszyfrowanej bazy zostało anulowane.");
+      setNotice("Zapisywanie anulowane.");
       return;
     }
     if (result?.ok) {
-      setNotice("Zaszyfrowana baza została przekazana do pobrania/zapisu. Teraz zrób test importu tym samym hasłem.");
+      setNotice("Pobrano zaszyfrowany plik.");
       return;
     }
-    setNotice("Przeglądarka zablokowała pobranie. Użyj kopiowania zaszyfrowanej treści.");
+    setNotice("Przeglądarka zablokowała pobranie.");
   }
 
   async function saveEncryptedDatabaseToSelectedFile() {
     if (!fileSystemSupported) {
-      setNotice("Ta przeglądarka nie wspiera zapisu do wybranego pliku. Użyj Chrome albo Edge, albo zwykłego pobrania pliku.");
+      setNotice("Tryb plikowy wymaga Chrome albo Edge.");
       return;
     }
 
@@ -201,24 +205,24 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
       });
 
       if (result?.reason === "cancelled") {
-        setNotice("Wybór pliku został anulowany. Dane nie zostały zapisane do pliku roboczego.");
+        setNotice("Wybór pliku anulowany.");
         return;
       }
 
       if (result?.reason === "unsupported") {
-        setNotice("Ta przeglądarka nie obsługuje File System Access API. Użyj zwykłego pobrania albo Chrome/Edge.");
+        setNotice("Ta przeglądarka nie obsługuje trybu plikowego.");
         return;
       }
 
       if (result?.ok) {
         setLastFileSaveName(result.fileName || "wybrany plik");
-        setNotice(`Zapisano zaszyfrowaną bazę do wybranego pliku: ${result.fileName || "wybrany plik"}. Możesz teraz otworzyć ją jako sesję plikową.`);
+        setNotice("Zapisano zaszyfrowany plik.");
         return;
       }
 
-      setNotice("Nie udało się zapisać zaszyfrowanej bazy do wybranego pliku.");
+      setNotice("Nie udało się zapisać pliku.");
     } catch (error) {
-      setNotice(error.message || "Nie udało się zapisać zaszyfrowanej bazy do wybranego pliku.");
+      setNotice(error.message || "Nie udało się zapisać pliku.");
     } finally {
       setBusy(false);
     }
@@ -226,34 +230,34 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
 
   async function openEncryptedFileSession() {
     if (!fileSystemSupported) {
-      setNotice("Ta przeglądarka nie wspiera otwierania bazy z wybranego pliku. Użyj Chrome albo Edge.");
+      setNotice("Tryb plikowy wymaga Chrome albo Edge.");
       return;
     }
 
     const nextPassword = openPassword.trim();
     if (!nextPassword) {
-      setNotice("Najpierw wpisz hasło do zaszyfrowanej bazy, potem wybierz plik.");
+      setNotice("Podaj hasło do bazy.");
       return;
     }
 
     setBusy(true);
-    setNotice("Wybierz zaszyfrowany plik bazy. Po poprawnym haśle aplikacja przełączy się na sesję plikową.");
+    setNotice("Wybierz plik bazy.");
 
     try {
       const result = await openEncryptedDatabaseSession({ password: nextPassword });
 
       if (result?.reason === "cancelled") {
-        setNotice("Otwieranie zaszyfrowanej bazy zostało anulowane.");
+        setNotice("Otwieranie anulowane.");
         return;
       }
 
       if (result?.reason === "unsupported") {
-        setNotice("Ta przeglądarka nie obsługuje File System Access API. Użyj Chrome albo Edge.");
+        setNotice("Ta przeglądarka nie obsługuje trybu plikowego.");
         return;
       }
 
       if (!result?.ok) {
-        setNotice("Nie udało się otworzyć zaszyfrowanej bazy.");
+        setNotice("Nie udało się otworzyć bazy.");
         return;
       }
 
@@ -269,9 +273,9 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
           },
         })
       );
-      setNotice(`Odblokowano plik: ${result.fileName}. Zmiany będą zapisywane do tego samego zaszyfrowanego pliku.`);
+      setNotice(`Otworzono: ${result.fileName}.`);
     } catch (error) {
-      setNotice(error.message || "Nie udało się otworzyć zaszyfrowanej bazy.");
+      setNotice(error.message || "Nie udało się otworzyć bazy.");
     } finally {
       setBusy(false);
       setStorageCopyDetected(hasKanbanBrowserStorage(STORAGE_KEY, LEGACY_KEYS));
@@ -286,16 +290,16 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      setNotice("Skopiowano zaszyfrowaną treść. Wklej ją do Notatnika i zapisz jako plik .kanban.json.");
+      setNotice("Skopiowano zaszyfrowaną treść.");
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      setNotice("Nie udało się skopiować automatycznie. Zaszyfrowana treść jest widoczna poniżej — zaznacz ją ręcznie.");
+      setNotice("Nie udało się skopiować automatycznie.");
     }
   }
 
   function clearBrowserCopy() {
     const confirmed = window.confirm(
-      "Najpierw upewnij się, że masz pobraną albo zapisaną zaszyfrowaną bazę i że import testowy działa. Usunąć starą kopię z pamięci przeglądarki i zatrzymać zapis do localStorage w tej sesji?"
+      "Usunąć starą kopię z pamięci przeglądarki i zatrzymać zapis do localStorage w tej sesji?"
     );
     if (!confirmed) return;
 
@@ -304,17 +308,20 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
     setBrowserPersistenceDisabled(isBrowserPersistenceDisabled());
 
     if (result.failedKeys.length) {
-      setNotice(`Nie wszystko udało się usunąć. Problem z kluczami: ${result.failedKeys.join(", ")}`);
+      setNotice(`Nie wszystko udało się usunąć: ${result.failedKeys.join(", ")}`);
       return;
     }
 
     if (result.removedKeys.length) {
-      setNotice(`Usunięto starą kopię z przeglądarki (${result.removedKeys.length} kluczy). Zapis do localStorage jest zatrzymany w tej sesji.`);
+      setNotice(`Usunięto starą kopię (${result.removedKeys.length}).`);
       return;
     }
 
-    setNotice("Nie znaleziono starej kopii w localStorage. Zapis do localStorage jest zatrzymany w tej sesji.");
+    setNotice("Brak starej kopii w localStorage.");
   }
+
+  const activeFileLabel = fileSession.active ? fileSession.fileName : "brak";
+  const lastSaveLabel = fileSession.active ? formatSessionTime(fileSession.lastSavedAt) : "—";
 
   return (
     <AnimatePresence>
@@ -334,18 +341,49 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
             onMouseDown={(event) => event.stopPropagation()}
           >
             <div className="mb-5 flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <div className={cx("mb-3 flex h-11 w-11 items-center justify-center rounded-2xl ring-1", t.chip)}>
-                  <ShieldCheck size={20} />
+              <div className="flex min-w-0 items-center gap-3">
+                <span className={cx("flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ring-1", t.chip)}>
+                  <ShieldCheck size={19} />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-xl font-black tracking-tight">Baza Kanbana</h2>
+                  <p className={cx("mt-0.5 text-xs font-semibold", t.textSoft)}>Plik, szyfrowanie, migracja.</p>
                 </div>
-                <h2 className="text-2xl font-black tracking-tight">Baza Kanbana</h2>
-                <p className={cx("mt-1 max-w-2xl text-sm leading-6", t.textMuted)}>
-                  Zarządzanie zaszyfrowanym plikiem roboczym i migracją starego zapisu z przeglądarki.
-                </p>
               </div>
               <button type="button" onClick={onClose} className={cx("rounded-2xl p-2 transition", t.hoverSoft, t.textMuted)}>
                 <X />
               </button>
+            </div>
+
+            <div className="mb-4 flex flex-wrap gap-2">
+              <StatusPill
+                t={t}
+                active={fileSession.active}
+                label="Plik"
+                value={activeFileLabel}
+                title={`Aktywna baza: ${activeFileLabel}. Ostatni zapis: ${lastSaveLabel}`}
+              />
+              <StatusPill
+                t={t}
+                active={browserPersistenceDisabled}
+                label="localStorage"
+                value={browserPersistenceDisabled ? "zatrzymany" : "aktywny"}
+                title="Zapis do przeglądarki. Docelowo przy pracy na pliku powinien być zatrzymany."
+              />
+              <StatusPill
+                t={t}
+                active={fileSystemSupported}
+                label="Chrome"
+                value={fileSystemSupported ? "OK" : "brak trybu pliku"}
+                title="Obsługa File System Access API."
+              />
+              <StatusPill
+                t={t}
+                active={!storageCopyDetected}
+                label="Kopia"
+                value={storageCopyDetected ? "jest" : "brak"}
+                title="Stara kopia danych w localStorage."
+              />
             </div>
 
             {notice && (
@@ -354,76 +392,42 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
               </div>
             )}
 
-            <div className="grid gap-4 xl:grid-cols-2">
-              <section className={panelClass}>
-                <SectionIntro t={t} icon={<Database size={17} />} title="Status">
-                  Krótki podgląd tego, gdzie aktualnie znajduje się baza i czy przeglądarka nadal przechowuje kopię.
-                </SectionIntro>
+            <div className="grid gap-4 xl:grid-cols-3">
+              <ActionCard
+                t={t}
+                icon={<HardDrive size={17} />}
+                title="Otwórz plik"
+                titleHint="Otwórz istniejącą zaszyfrowaną bazę roboczą."
+              >
+                <label className="grid gap-1.5 text-xs font-black">
+                  Hasło
+                  <input
+                    type="password"
+                    value={openPassword}
+                    onChange={(event) => setOpenPassword(event.target.value)}
+                    className={inputClass}
+                    placeholder="Hasło bazy"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={openEncryptedFileSession}
+                  disabled={busy || !fileSystemSupported}
+                  className={cx("mt-auto w-full", quietButtonClass)}
+                >
+                  <HardDrive size={15} /> {busy ? "Otwieram..." : "Otwórz"}
+                </button>
+              </ActionCard>
 
-                <dl className={cx("divide-y", t.divider)}>
-                  <StatusLine
-                    t={t}
-                    label="Kopia w przeglądarce"
-                    value={storageCopyDetected ? "Wykryto dane w znanych kluczach localStorage." : "Nie wykryto danych w znanych kluczach localStorage."}
-                  />
-                  <StatusLine
-                    t={t}
-                    label="Zapis do localStorage"
-                    value={browserPersistenceDisabled ? "Zatrzymany w tej sesji." : "Aktywny tylko, gdy nie ma sesji plikowej."}
-                  />
-                  <StatusLine
-                    t={t}
-                    label="Tryb plikowy"
-                    value={fileSystemSupported ? "Dostępny w tej przeglądarce." : "Niedostępny — użyj Chrome/Edge albo pobrania pliku."}
-                  />
-                  <StatusLine
-                    t={t}
-                    label="Aktywna baza"
-                    value={fileSession.active ? `${fileSession.fileName} · ostatni zapis: ${formatSessionTime(fileSession.lastSavedAt)}` : "Brak otwartej sesji plikowej."}
-                    strong={fileSession.active}
-                  />
-                </dl>
-              </section>
-
-              <section className={panelClass}>
-                <SectionIntro t={t} icon={<HardDrive size={17} />} title="Otwórz zaszyfrowany plik">
-                  Użyj, gdy chcesz przełączyć tablicę na inny plik roboczy albo ponownie otworzyć bazę po zablokowaniu.
-                </SectionIntro>
-
-                <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+              <ActionCard
+                t={t}
+                icon={<ShieldCheck size={17} />}
+                title="Zapisz szyfrowany"
+                titleHint="Utwórz zaszyfrowany plik z aktualnego stanu tablicy."
+              >
+                <div className="grid gap-3">
                   <label className="grid gap-1.5 text-xs font-black">
-                    Hasło do bazy
-                    <input
-                      type="password"
-                      value={openPassword}
-                      onChange={(event) => setOpenPassword(event.target.value)}
-                      className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
-                      placeholder="Hasło pliku roboczego"
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={openEncryptedFileSession}
-                    disabled={busy || !fileSystemSupported}
-                    className={quietButtonClass}
-                  >
-                    <HardDrive size={15} /> {busy ? "Otwieram..." : "Otwórz plik"}
-                  </button>
-                </div>
-
-                <p className={cx("mt-3 text-xs font-semibold leading-5", t.textSoft)}>
-                  Hasło zostaje tylko w pamięci strony. Po otwarciu pliku zapis do localStorage zostaje zatrzymany w tej sesji.
-                </p>
-              </section>
-
-              <section className={panelClass}>
-                <SectionIntro t={t} icon={<ShieldCheck size={17} />} title="Zaszyfruj aktualny stan">
-                  Przydatne przy migracji starej bazy albo gdy chcesz utworzyć dodatkowy zaszyfrowany plik.
-                </SectionIntro>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="grid gap-1.5 text-xs font-black">
-                    Hasło do bazy
+                    Hasło
                     <input
                       type="password"
                       value={password}
@@ -432,12 +436,12 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
                         setEncryptedText("");
                         setLastFileSaveName("");
                       }}
-                      className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
+                      className={inputClass}
                       placeholder="Minimum 8 znaków"
                     />
                   </label>
                   <label className="grid gap-1.5 text-xs font-black">
-                    Powtórz hasło
+                    Powtórz
                     <input
                       type="password"
                       value={passwordRepeat}
@@ -446,20 +450,20 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
                         setEncryptedText("");
                         setLastFileSaveName("");
                       }}
-                      className={cx("rounded-2xl border px-3 py-2.5 text-sm outline-none ring-violet-300 transition focus:ring-4", t.inputSolid)}
+                      className={inputClass}
                       placeholder="To samo hasło"
                     />
                   </label>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-auto grid gap-2 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
                   <button
                     type="button"
                     onClick={saveEncryptedDatabaseToSelectedFile}
                     disabled={busy || !fileSystemSupported}
                     className={quietButtonClass}
                   >
-                    <HardDrive size={15} /> {busy ? "Szyfruję..." : "Zapisz do pliku"}
+                    <HardDrive size={15} /> Plik
                   </button>
                   <button
                     type="button"
@@ -467,7 +471,7 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
                     disabled={busy}
                     className={quietButtonClass}
                   >
-                    <Download size={15} /> Pobierz plik
+                    <Download size={15} /> Pobierz
                   </button>
                   <button
                     type="button"
@@ -475,13 +479,13 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
                     disabled={busy}
                     className={quietButtonClass}
                   >
-                    {copied ? <CheckCircle2 size={15} /> : <ShieldCheck size={15} />} {copied ? "Skopiowano" : "Kopiuj treść"}
+                    {copied ? <CheckCircle2 size={15} /> : <ShieldCheck size={15} />} {copied ? "OK" : "Kopiuj"}
                   </button>
                 </div>
 
                 {lastFileSaveName && (
-                  <p className={cx("mt-3", subtleInfoClass)}>
-                    Plik roboczy zapisany: {lastFileSaveName}
+                  <p className={cx("mt-3 truncate rounded-2xl px-3 py-2 text-xs font-semibold", t.subtle)} title={lastFileSaveName}>
+                    Zapisano: {lastFileSaveName}
                   </p>
                 )}
 
@@ -490,30 +494,29 @@ export function SecurityDatabaseModal({ t, open, backupText, fileName, onClose }
                     value={encryptedText}
                     readOnly
                     spellCheck={false}
-                    className={cx("mt-3 h-36 w-full resize-none rounded-2xl border p-3 font-mono text-[11px] leading-5 outline-none", t.inputSolid)}
+                    className={cx("mt-3 h-28 w-full resize-none rounded-2xl border p-3 font-mono text-[11px] leading-5 outline-none", t.inputSolid)}
                     onFocus={(event) => event.target.select()}
                   />
                 )}
-              </section>
+              </ActionCard>
 
-              <section className={panelClass}>
-                <SectionIntro t={t} icon={<Trash2 size={17} />} title="Stara kopia w przeglądarce">
-                  Użyj dopiero po zapisaniu zaszyfrowanego pliku i pozytywnym teście otwierania bazy.
-                </SectionIntro>
-
-                <div className="grid gap-3">
-                  <button
-                    type="button"
-                    onClick={clearBrowserCopy}
-                    className={cx("inline-flex w-fit items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5", t.dangerButton)}
-                  >
-                    <Trash2 size={15} /> Usuń starą kopię
-                  </button>
-                  <p className={cx("text-xs font-semibold leading-5", t.textMuted)}>
-                    Otwarta sesja plikowa zapisuje zmiany do zaszyfrowanego pliku. localStorage zostaje tylko trybem awaryjnym, gdy nie pracujesz na pliku.
-                  </p>
+              <ActionCard
+                t={t}
+                icon={<Trash2 size={17} />}
+                title="Przeglądarka"
+                titleHint="Usuń starą kopię localStorage po zapisaniu zaszyfrowanego pliku."
+              >
+                <div className={cx("mb-3 rounded-2xl px-3 py-2 text-xs font-semibold", t.subtle)}>
+                  {storageCopyDetected ? "Wykryto starą kopię." : "Brak starej kopii."}
                 </div>
-              </section>
+                <button
+                  type="button"
+                  onClick={clearBrowserCopy}
+                  className={cx("mt-auto inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-black transition hover:-translate-y-0.5", t.dangerButton)}
+                >
+                  <Trash2 size={15} /> Usuń kopię
+                </button>
+              </ActionCard>
             </div>
           </motion.div>
         </motion.div>
