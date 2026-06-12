@@ -3,6 +3,7 @@ import {
   encryptKanbanDatabase,
   isEncryptedDatabasePayload,
 } from "./encryptedDatabase.js";
+import { clearLiveBoardSnapshot, setLiveBoardSnapshot } from "./liveBoardSnapshot.js";
 
 let activeFileDatabaseSession = null;
 
@@ -120,6 +121,7 @@ export function getActiveFileDatabaseSummary() {
 
 export function closeActiveFileDatabaseSession() {
   activeFileDatabaseSession = null;
+  clearLiveBoardSnapshot();
   return { ok: true };
 }
 
@@ -151,6 +153,7 @@ export async function openEncryptedDatabaseSession({ password }) {
     openedAt: new Date().toISOString(),
     lastSavedAt: "",
   };
+  setLiveBoardSnapshot(payload);
 
   return {
     ok: true,
@@ -174,6 +177,7 @@ export async function saveActiveEncryptedDatabaseSession(data) {
     ...activeFileDatabaseSession,
     lastSavedAt: new Date().toISOString(),
   };
+  setLiveBoardSnapshot(data);
 
   return {
     ok: true,
