@@ -375,6 +375,15 @@ export function progressOf(task) {
   if (!task.subtasks?.length) return 0;
   return Math.round((task.subtasks.filter((item) => item.done).length / task.subtasks.length) * 100);
 }
+export function stageMetaForTask(task, columns = defaultColumns) {
+  return columns.find((column) => column.id === task?.columnId) || columns[0] || defaultColumns[0];
+}
+export function stageGradientForTask(task, columns = defaultColumns) {
+  return stageMetaForTask(task, columns)?.accent || "from-slate-400 to-slate-600";
+}
+export function stageTitleForTask(task, columns = defaultColumns) {
+  return stageMetaForTask(task, columns)?.title || "Bez etapu";
+}
 export function monthLabel(date) {
   return date.toLocaleDateString("pl-PL", { month: "long", year: "numeric" });
 }
