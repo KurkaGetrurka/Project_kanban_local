@@ -138,6 +138,14 @@ export const theme = {
   },
 };
 
+export function selectOptionStyle(t) {
+  const isDarkTheme = String(t?.inputSolid || t?.modal || "").includes("slate-950");
+  return {
+    backgroundColor: isDarkTheme ? "#020617" : "#ffffff",
+    color: isDarkTheme ? "#e2e8f0" : "#0f172a",
+  };
+}
+
 // Labels and task priority
 export const labelThemes = {
   pink: "bg-pink-100 text-pink-700 ring-pink-200",
