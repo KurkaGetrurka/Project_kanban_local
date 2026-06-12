@@ -1,0 +1,360 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, CheckCircle2, HardDrive, ShieldCheck } from "lucide-react";
+
+import { SecurityDatabaseModal } from "./security-database.jsx";
+import {
+  LEGACY_KEYS,
+  STORAGE_KEY,
+  backupFileName,
+  buildBackupPayload,
+  cx,
+  defaultBoardState,
+  normalizeImportedState,
+  safeStorageGetItem,
+  theme,
+} from "../shared.jsx";
+import {
+  clearKanbanBrowserStorage,
+  installBrowserPersistenceGuard,
+  isBrowserPersistenceDisabled,
+} from "../security/browserStoragePolicy.js";
+import {
+  closeActiveFileDatabaseSession,
+  getActiveFileDatabaseSummary,
+} from "../security/fileDatabaseStorage.js";
+import { getLiveBoardSnapshot } from "../security/liveBoardSnapshot.js";
+
+const STATUS_TOAST_TIMEOUT_MS = 4200;
+const AUTOSAVE_BLINK_TIMEOUT_MS = 1100;
+
+function readStoredBoardState() {
+  const keys = [STORAGE_KEY, ...LEGACY_KEYS];
+
+  for (const key of keys) {
+    const raw = safeStorageGetItem(key);
+    if (!raw) continue;
+
+    try {
+      const parsed = JSON.parse(raw);
+      return normalizeImportedState(parsed, defaultBoardState);
+    } catch {
+      // Ignore damaged legacy entries and continue looking for a usable copy.
+    }
+  }
+
+  return defaultBoardState;
+}
+
+function buildCurrentBackupText() {
+  const liveSnapshot = getLiveBoardSnapshot();
+  if (liveSnapshot) {
+    return JSON.stringify(liveSnapshot, null, 2);
+  }
+
+  const boardState = readStoredBoardState();
+  return JSON.stringify(buildBackupPayload(boardState), null, 2);
+}
+
+function getCurrentThemeMode() {
+  if (typeof document !== "undefined") {
+    const liveTheme = document.querySelector("[data-kanban-board]")?.getAttribute("data-theme");
+    if (liveTheme === "dark" || liveTheme === "light") return liveTheme;
+  }
+
+  const liveSnapshot = getLiveBoardSnapshot();
+  if (liveSnapshot?.darkMode === true) return "dark";
+  if (liveSnapshot?.darkMode === false) return "light";
+
+  return readStoredBoardState().darkMode ? "dark" : "light";
+}
+
+function buildPanelTheme(mode) {
+  const baseTheme = theme[mode] || theme.dark;
+  const isDark = mode === "dark";
+
+  return {
+    ...baseTheme,
+    modal: cx(baseTheme.modal, isDark ? "text-slate-100" : "text-slate-900"),
+  };
+}
+
+function formatStatusTime(value) {
+  if (!value) return "czeka na zapis";
+
+  try {
+    return new Date(value).toLocaleString("pl-PL", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return value;
+  }
+}
+
+function buildDatabaseStatus(extra = {}) {
+  return {
+    session: getActiveFileDatabaseSummary(),
+    browserPersistenceDisabled: isBrowserPersistenceDisabled(),
+    lastError: extra.lastError || "",
+  };
+}
+
+function getStatusCopy(status) {
+  if (status.lastError) {
+    return {
+      tone: "error",
+      icon: AlertTriangle,
+      title: "Błąd zapisu bazy",
+      detail: status.lastError,
+    };
+  }
+
+  if (status.session?.active) {
+    return {
+      tone: "success",
+      icon: CheckCircle2,
+      title: `Plik aktywny: ${status.session.fileName || "baza Kanbana"}`,
+      detail: status.session.lastSavedAt
+        ? `Ostatni zapis: ${formatStatusTime(status.session.lastSavedAt)}`
+        : "Sesja odblokowana, pierwszy zapis nastąpi po zmianie danych.",
+    };
+  }
+
+  if (status.browserPersistenceDisabled) {
+    return {
+      tone: "warning",
+      icon: ShieldCheck,
+      title: "Zapis do przeglądarki zatrzymany",
+      detail: "Otwórz zaszyfrowany plik bazy, żeby zapisywać dalsze zmiany.",
+    };
+  }
+
+  return {
+    tone: "neutral",
+    icon: HardDrive,
+    title: "Tryb przeglądarkowy",
+    detail: "Dane mogą nadal zapisywać się lokalnie w przeglądarce.",
+  };
+}
+
+export function SecurityDatabaseLauncher() {
+  const [open, setOpen] = useState(false);
+  const [backupText, setBackupText] = useState(() => buildCurrentBackupText());
+  const [fileName, setFileName] = useState(() => backupFileName());
+  const [themeMode, setThemeMode] = useState(() => getCurrentThemeMode());
+  const [databaseStatus, setDatabaseStatus] = useState(() => buildDatabaseStatus());
+  const [statusVisible, setStatusVisible] = useState(false);
+  const [saveBlinkActive, setSaveBlinkActive] = useState(false);
+  const saveBlinkTimerRef = useRef(null);
+
+  const t = useMemo(() => buildPanelTheme(themeMode), [themeMode]);
+  const launcherButtonTheme = themeMode === "dark"
+    ? "border-violet-300/40 bg-slate-950/85 text-white hover:bg-slate-900"
+    : "border-violet-200 bg-white/90 text-slate-800 shadow-violet-200/40 hover:bg-violet-50";
+  const launcherSaveBlinkTheme = themeMode === "dark"
+    ? "border-emerald-300/80 bg-emerald-500/20 text-emerald-50 shadow-emerald-400/40 ring-4 ring-emerald-400/25"
+    : "border-emerald-300 bg-emerald-50 text-emerald-900 shadow-emerald-200/80 ring-4 ring-emerald-200/80";
+  const lockButtonTheme = themeMode === "dark"
+    ? "border-rose-300/40 bg-rose-950/95 text-rose-50 hover:bg-rose-900"
+    : "border-rose-200 bg-rose-50/95 text-rose-800 shadow-rose-100/60 hover:bg-rose-100";
+  const statusCopy = getStatusCopy(databaseStatus);
+  const StatusIcon = statusCopy.icon;
+  const statusTheme = themeMode === "dark"
+    ? {
+        neutral: "border-slate-700/80 bg-slate-950/90 text-slate-100",
+        success: "border-emerald-400/40 bg-emerald-950/90 text-emerald-50",
+        warning: "border-amber-300/40 bg-amber-950/90 text-amber-50",
+        error: "border-rose-300/40 bg-rose-950/90 text-rose-50",
+      }
+    : {
+        neutral: "border-slate-200 bg-white/95 text-slate-800 shadow-slate-200/50",
+        success: "border-emerald-200 bg-emerald-50/95 text-emerald-900 shadow-emerald-100/60",
+        warning: "border-amber-200 bg-amber-50/95 text-amber-950 shadow-amber-100/60",
+        error: "border-rose-200 bg-rose-50/95 text-rose-950 shadow-rose-100/60",
+      };
+
+  function refreshLauncherState(extra = {}) {
+    setThemeMode(getCurrentThemeMode());
+    setBackupText(buildCurrentBackupText());
+    setFileName(backupFileName());
+    setDatabaseStatus(buildDatabaseStatus(extra));
+  }
+
+  function triggerSaveBlink() {
+    if (typeof window === "undefined") return;
+
+    if (saveBlinkTimerRef.current) {
+      window.clearTimeout(saveBlinkTimerRef.current);
+    }
+
+    setSaveBlinkActive(true);
+    saveBlinkTimerRef.current = window.setTimeout(() => {
+      setSaveBlinkActive(false);
+      saveBlinkTimerRef.current = null;
+    }, AUTOSAVE_BLINK_TIMEOUT_MS);
+  }
+
+  useEffect(() => {
+    if (!statusVisible) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setStatusVisible(false);
+    }, STATUS_TOAST_TIMEOUT_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [statusVisible, databaseStatus]);
+
+  useEffect(() => {
+    return () => {
+      if (saveBlinkTimerRef.current) {
+        window.clearTimeout(saveBlinkTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    function refreshFromEvent(event) {
+      if (event?.type === "kanban-file-database-save-error") {
+        setBackupText(buildCurrentBackupText());
+        setDatabaseStatus(buildDatabaseStatus({ lastError: event.detail?.message || "Nie udało się zapisać zmian do pliku." }));
+        setStatusVisible(true);
+        return;
+      }
+
+      setThemeMode(getCurrentThemeMode());
+      setBackupText(buildCurrentBackupText());
+      setDatabaseStatus(buildDatabaseStatus({ lastError: "" }));
+
+      if (event?.type === "kanban-file-database-saved") {
+        triggerSaveBlink();
+      }
+
+      if (event?.type !== "kanban-file-database-saved" && event?.type !== "kanban-live-board-snapshot-changed") {
+        setStatusVisible(true);
+      }
+    }
+
+    const events = [
+      "kanban-file-database-opened",
+      "kanban-file-database-applied",
+      "kanban-file-database-saved",
+      "kanban-file-database-save-error",
+      "kanban-file-database-closed",
+      "kanban-live-board-snapshot-changed",
+      "kanban-browser-persistence-changed",
+      "kanban-imported",
+    ];
+
+    events.forEach((eventName) => window.addEventListener(eventName, refreshFromEvent));
+    return () => events.forEach((eventName) => window.removeEventListener(eventName, refreshFromEvent));
+  }, []);
+
+  useEffect(() => {
+    if (typeof MutationObserver === "undefined" || typeof document === "undefined") return undefined;
+
+    const observer = new MutationObserver(() => {
+      setThemeMode(getCurrentThemeMode());
+    });
+
+    observer.observe(document.body, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+
+    setThemeMode(getCurrentThemeMode());
+    return () => observer.disconnect();
+  }, []);
+
+  function openSecurityPanel() {
+    installBrowserPersistenceGuard(STORAGE_KEY, LEGACY_KEYS);
+    refreshLauncherState({ lastError: databaseStatus.lastError });
+    setStatusVisible(false);
+    setOpen(true);
+  }
+
+  function lockDatabaseSession() {
+    const confirmed = window.confirm(
+      "Zablokować zaszyfrowaną bazę? Aplikacja usunie hasło z pamięci strony, wyczyści starą kopię przeglądarkową i przeładuje widok. Upewnij się, że ostatni zapis do pliku zakończył się poprawnie."
+    );
+    if (!confirmed) return;
+
+    closeActiveFileDatabaseSession();
+    clearKanbanBrowserStorage(STORAGE_KEY, LEGACY_KEYS);
+    setOpen(false);
+    setDatabaseStatus(buildDatabaseStatus({ lastError: "" }));
+    setStatusVisible(true);
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("kanban-file-database-closed"));
+      window.setTimeout(() => window.location.reload(), 250);
+    }
+  }
+
+  return (
+    <>
+      {statusVisible && !open && (
+        <button
+          type="button"
+          onClick={openSecurityPanel}
+          className={cx(
+            "fixed bottom-20 right-4 z-50 w-[min(21rem,calc(100vw-2rem))] rounded-2xl border px-4 py-3 text-left text-xs shadow-2xl backdrop-blur-2xl transition hover:-translate-y-0.5",
+            statusTheme[statusCopy.tone] || statusTheme.neutral
+          )}
+          title="Status bazy danych Kanbana"
+        >
+          <div className="flex items-start gap-3">
+            <StatusIcon size={17} className="mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <div className="truncate font-black">{statusCopy.title}</div>
+              <div className="mt-0.5 line-clamp-2 text-[11px] font-semibold opacity-80">{statusCopy.detail}</div>
+            </div>
+          </div>
+        </button>
+      )}
+
+      <button
+        type="button"
+        onClick={openSecurityPanel}
+        className={cx(
+          "fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-xs font-black shadow-2xl backdrop-blur-2xl transition duration-300 hover:-translate-y-0.5",
+          saveBlinkActive ? cx("animate-pulse scale-[1.03]", launcherSaveBlinkTheme) : launcherButtonTheme
+        )}
+        title={`${statusCopy.title}. Kliknij, aby otworzyć bazę danych i szyfrowanie.`}
+      >
+        <ShieldCheck size={16} />
+        <span>Baza</span>
+      </button>
+
+      <SecurityDatabaseModal
+        t={t}
+        open={open}
+        backupText={backupText}
+        fileName={fileName}
+        onClose={() => {
+          setOpen(false);
+          refreshLauncherState({ lastError: databaseStatus.lastError });
+        }}
+      />
+
+      {databaseStatus.session?.active && open && (
+        <button
+          type="button"
+          onClick={lockDatabaseSession}
+          className={cx(
+            "fixed bottom-6 left-1/2 z-[60] inline-flex -translate-x-1/2 items-center gap-2 rounded-2xl border px-4 py-3 text-xs font-black shadow-2xl backdrop-blur-2xl transition hover:-translate-y-0.5",
+            lockButtonTheme
+          )}
+          title="Zablokuj zaszyfrowaną bazę i wyczyść widok"
+        >
+          <ShieldCheck size={16} />
+          <span>Zablokuj otwartą bazę</span>
+        </button>
+      )}
+    </>
+  );
+}

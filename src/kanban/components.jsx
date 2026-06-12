@@ -7,5 +7,6 @@ export * from "./components/board.jsx";
 export * from "./components/performance.jsx";
 export * from "./components/gallery.jsx";
 export * from "./components/backup.jsx";
+export * from "./components/security-database.jsx";
 export * from "./components/archive.jsx";
 export * from "./components/edit-task.jsx";

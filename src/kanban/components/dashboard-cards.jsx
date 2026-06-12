@@ -3,7 +3,12 @@ import { Activity, Archive, CheckSquare2, Image as ImageIcon, Plus, Sparkles, Tr
 import { motion } from "framer-motion";
 
 import { DashboardCard, DashboardTitle } from "./shell.jsx";
-import { cx, dateKey, formatDate, selectOptionStyle } from "../shared.jsx";
+import { cx, dateKey, formatDate } from "../shared.jsx";
+
+const selectOptionStyle = (t) => ({
+  color: String(t?.modal || "").includes("slate-950") ? "#f8fafc" : "#0f172a",
+  backgroundColor: String(t?.modal || "").includes("slate-950") ? "#020617" : "#ffffff",
+});
 
 export function ProjectProgressCard({ t, progress, total, done, archived }) {
   const radius = 54;
