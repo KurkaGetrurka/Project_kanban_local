@@ -22,7 +22,7 @@ Używany schemat:
 - losowy `iv` dla każdego szyfrowania,
 - cały eksport Kanbana jest szyfrowany jako jedna całość.
 
-## Wdrożone w tym etapie
+## Wdrożone
 
 - moduł `encryptedDatabase.js`,
 - eksport zaszyfrowanej bazy z poziomu okna eksportu,
@@ -33,7 +33,8 @@ Używany schemat:
 - pływający przycisk `Baza`, który otwiera panel migracji bez ingerowania w główny układ aplikacji,
 - startowa instalacja blokady zapisu do `localStorage` dla znanych kluczy Kanbana,
 - moduł `fileDatabaseStorage.js` z pomocnikami File System Access API,
-- jawna akcja `Zaszyfruj i zapisz do wybranego pliku`, która tworzy zaszyfrowany plik roboczy w miejscu wskazanym przez użytkownika.
+- jawna akcja `Zaszyfruj i zapisz do wybranego pliku`, która tworzy zaszyfrowany plik roboczy w miejscu wskazanym przez użytkownika,
+- sesja plikowa: `Otwórz zaszyfrowaną bazę`, odblokowanie hasłem i zapis późniejszych zmian do tego samego zaszyfrowanego pliku.
 
 ## Ważna uwaga o czyszczeniu localStorage
 
@@ -41,31 +42,24 @@ Samo usunięcie kluczy z `localStorage` nie wystarczy, jeśli główny hook apli
 
 Strażnik jest instalowany już w `src/main.jsx`, zanim aplikacja zostanie wyrenderowana. Dzięki temu, jeśli po migracji ustawiona jest flaga blokady zapisu w sesji, próby ponownego zapisania starych kluczy Kanbana do `localStorage` są zatrzymywane.
 
-Dalsze docelowe uproszczenie to podpięcie `shouldPersistToBrowserStorage()` bezpośrednio w `useKanbanBoard.jsx`, w miejscu gdzie obecnie wykonywane jest:
+`useKanbanBoard.jsx` dodatkowo sprawdza `shouldPersistToBrowserStorage()`. Gdy aktywna jest sesja plikowa, zapis do `localStorage` nie jest używany — zamiast tego stan tablicy jest szyfrowany i zapisywany do aktywnego pliku.
 
-```js
-safeStorageSetItem(STORAGE_KEY, JSON.stringify(persistedBoardState));
-```
+## Etap sesji plikowej
 
-Docelowo zapis powinien wyglądać logicznie tak:
+Przepływ docelowy w tym etapie:
 
-```js
-if (shouldPersistToBrowserStorage()) {
-  safeStorageSetItem(STORAGE_KEY, JSON.stringify(persistedBoardState));
-}
-```
-
-## Etap pliku roboczego
-
-Przycisk `Zaszyfruj i zapisz do wybranego pliku` korzysta z File System Access API, jeśli przeglądarka je obsługuje. To jest etap przejściowy: użytkownik świadomie wskazuje miejsce zapisu zaszyfrowanej bazy, ale aplikacja nie zapisuje jeszcze automatycznie każdej późniejszej zmiany do tego samego pliku.
-
-Pełny tryb pracy na pliku będzie wymagał osobnej sesji bazy: otwarcia pliku, odszyfrowania hasłem, trzymania danych tylko w pamięci aplikacji i ponownego szyfrowania przy zapisie.
+1. Użytkownik tworzy zaszyfrowany plik przez `Zaszyfruj i zapisz do wybranego pliku` albo posiada już taki plik.
+2. Użytkownik klika `Otwórz zaszyfrowaną bazę`.
+3. Aplikacja pyta o hasło i otwiera plik przez File System Access API.
+4. Hasło i uchwyt do pliku są trzymane tylko w pamięci aktywnej strony.
+5. Odszyfrowana baza jest przekazywana do głównej tablicy przez zdarzenie `kanban-file-database-opened`.
+6. Kolejne zmiany są debounced i zapisywane do tego samego pliku jako nowa zaszyfrowana koperta.
+7. Po odświeżeniu strony sesja znika i plik trzeba ponownie otworzyć hasłem.
 
 ## Do zrobienia w kolejnych etapach
 
-1. Podpiąć `shouldPersistToBrowserStorage()` w `useKanbanBoard.jsx`, aby logika zapisu była jawna także w hooku aplikacji.
-2. Dodać pełny tryb sesji plikowej: `Otwórz zaszyfrowaną bazę`, `Zapisz zmiany do tego samego pliku`, `Zablokuj bazę`.
-3. Przenieść główny zapis z `localStorage` do wybranego pliku bazy przez File System Access API.
-4. Dodać ekran startowy: `Otwórz bazę`, `Utwórz bazę`, `Zaszyfruj istniejącą bazę`.
-5. Dodać status bazy: `zaszyfrowana`, `niezapisane zmiany`, `zapisano`, `stare dane w przeglądarce`.
-6. Dodać blokadę bazy, która czyści odszyfrowane dane z pamięci aplikacji.
+1. Dodać wyraźny pasek statusu w głównej aplikacji: `pracujesz na pliku`, `zapisano`, `błąd zapisu`, `brak aktywnej bazy`.
+2. Dodać przycisk `Zablokuj bazę`, który czyści odszyfrowane dane z pamięci aplikacji i zamyka sesję plikową.
+3. Dodać ekran startowy: `Otwórz bazę`, `Utwórz bazę`, `Zaszyfruj istniejącą bazę`.
+4. Rozważyć trzymanie wyprowadzonego klucza w pamięci sesji zamiast wykonywania PBKDF2 przy każdym autosave, jeżeli zapis będzie odczuwalnie wolny.
+5. Dodać bardziej widoczny proces zmiany hasła bazy.
