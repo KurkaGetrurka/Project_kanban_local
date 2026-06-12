@@ -38,15 +38,34 @@ function buildCurrentBackupText() {
   return JSON.stringify(buildBackupPayload(boardState), null, 2);
 }
 
+function getCurrentThemeMode() {
+  return readStoredBoardState().darkMode ? "dark" : "light";
+}
+
+function buildPanelTheme(mode) {
+  const baseTheme = theme[mode] || theme.dark;
+  const isDark = mode === "dark";
+
+  return {
+    ...baseTheme,
+    modal: cx(baseTheme.modal, isDark ? "text-slate-100" : "text-slate-900"),
+  };
+}
+
 export function SecurityDatabaseLauncher() {
   const [open, setOpen] = useState(false);
   const [backupText, setBackupText] = useState(() => buildCurrentBackupText());
   const [fileName, setFileName] = useState(() => backupFileName());
+  const [themeMode, setThemeMode] = useState(() => getCurrentThemeMode());
 
-  const t = useMemo(() => theme.dark, []);
+  const t = useMemo(() => buildPanelTheme(themeMode), [themeMode]);
+  const launcherButtonTheme = themeMode === "dark"
+    ? "border-violet-300/40 bg-slate-950/85 text-white hover:bg-slate-900"
+    : "border-violet-200 bg-white/90 text-slate-800 shadow-violet-200/40 hover:bg-violet-50";
 
   function openSecurityPanel() {
     installBrowserPersistenceGuard(STORAGE_KEY, LEGACY_KEYS);
+    setThemeMode(getCurrentThemeMode());
     setBackupText(buildCurrentBackupText());
     setFileName(backupFileName());
     setOpen(true);
@@ -59,7 +78,7 @@ export function SecurityDatabaseLauncher() {
         onClick={openSecurityPanel}
         className={cx(
           "fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-xs font-black shadow-2xl backdrop-blur-2xl transition hover:-translate-y-0.5",
-          "border-violet-300/40 bg-slate-950/85 text-white hover:bg-slate-900"
+          launcherButtonTheme
         )}
         title="Baza danych i szyfrowanie"
       >
@@ -74,6 +93,7 @@ export function SecurityDatabaseLauncher() {
         fileName={fileName}
         onClose={() => {
           setOpen(false);
+          setThemeMode(getCurrentThemeMode());
           setBackupText(buildCurrentBackupText());
         }}
       />
