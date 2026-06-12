@@ -19,6 +19,8 @@ import {
 } from "../security/browserStoragePolicy.js";
 import { getActiveFileDatabaseSummary } from "../security/fileDatabaseStorage.js";
 
+const STATUS_TOAST_TIMEOUT_MS = 4200;
+
 function readStoredBoardState() {
   const keys = [STORAGE_KEY, ...LEGACY_KEYS];
 
@@ -43,6 +45,11 @@ function buildCurrentBackupText() {
 }
 
 function getCurrentThemeMode() {
+  if (typeof document !== "undefined") {
+    const liveTheme = document.querySelector("[data-kanban-board]")?.getAttribute("data-theme");
+    if (liveTheme === "dark" || liveTheme === "light") return liveTheme;
+  }
+
   return readStoredBoardState().darkMode ? "dark" : "light";
 }
 
@@ -123,6 +130,7 @@ export function SecurityDatabaseLauncher() {
   const [fileName, setFileName] = useState(() => backupFileName());
   const [themeMode, setThemeMode] = useState(() => getCurrentThemeMode());
   const [databaseStatus, setDatabaseStatus] = useState(() => buildDatabaseStatus());
+  const [statusVisible, setStatusVisible] = useState(false);
 
   const t = useMemo(() => buildPanelTheme(themeMode), [themeMode]);
   const launcherButtonTheme = themeMode === "dark"
@@ -138,10 +146,10 @@ export function SecurityDatabaseLauncher() {
         error: "border-rose-300/40 bg-rose-950/90 text-rose-50",
       }
     : {
-        neutral: "border-slate-200 bg-white/95 text-slate-800",
-        success: "border-emerald-200 bg-emerald-50/95 text-emerald-900",
-        warning: "border-amber-200 bg-amber-50/95 text-amber-950",
-        error: "border-rose-200 bg-rose-50/95 text-rose-950",
+        neutral: "border-slate-200 bg-white/95 text-slate-800 shadow-slate-200/50",
+        success: "border-emerald-200 bg-emerald-50/95 text-emerald-900 shadow-emerald-100/60",
+        warning: "border-amber-200 bg-amber-50/95 text-amber-950 shadow-amber-100/60",
+        error: "border-rose-200 bg-rose-50/95 text-rose-950 shadow-rose-100/60",
       };
 
   function refreshLauncherState(extra = {}) {
@@ -152,15 +160,28 @@ export function SecurityDatabaseLauncher() {
   }
 
   useEffect(() => {
+    if (!statusVisible) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setStatusVisible(false);
+    }, STATUS_TOAST_TIMEOUT_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [statusVisible, databaseStatus]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return undefined;
 
     function refreshFromEvent(event) {
       if (event?.type === "kanban-file-database-save-error") {
         setDatabaseStatus(buildDatabaseStatus({ lastError: event.detail?.message || "Nie udało się zapisać zmian do pliku." }));
+        setStatusVisible(true);
         return;
       }
 
+      setThemeMode(getCurrentThemeMode());
       setDatabaseStatus(buildDatabaseStatus({ lastError: "" }));
+      setStatusVisible(true);
     }
 
     const events = [
@@ -176,31 +197,51 @@ export function SecurityDatabaseLauncher() {
     return () => events.forEach((eventName) => window.removeEventListener(eventName, refreshFromEvent));
   }, []);
 
+  useEffect(() => {
+    if (typeof MutationObserver === "undefined" || typeof document === "undefined") return undefined;
+
+    const observer = new MutationObserver(() => {
+      setThemeMode(getCurrentThemeMode());
+    });
+
+    observer.observe(document.body, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+
+    setThemeMode(getCurrentThemeMode());
+    return () => observer.disconnect();
+  }, []);
+
   function openSecurityPanel() {
     installBrowserPersistenceGuard(STORAGE_KEY, LEGACY_KEYS);
     refreshLauncherState({ lastError: databaseStatus.lastError });
+    setStatusVisible(false);
     setOpen(true);
   }
 
   return (
     <>
-      <button
-        type="button"
-        onClick={openSecurityPanel}
-        className={cx(
-          "fixed bottom-20 right-4 z-50 w-[min(21rem,calc(100vw-2rem))] rounded-2xl border px-4 py-3 text-left text-xs shadow-2xl backdrop-blur-2xl transition hover:-translate-y-0.5",
-          statusTheme[statusCopy.tone] || statusTheme.neutral
-        )}
-        title="Status bazy danych Kanbana"
-      >
-        <div className="flex items-start gap-3">
-          <StatusIcon size={17} className="mt-0.5 shrink-0" />
-          <div className="min-w-0">
-            <div className="truncate font-black">{statusCopy.title}</div>
-            <div className="mt-0.5 line-clamp-2 text-[11px] font-semibold opacity-80">{statusCopy.detail}</div>
+      {statusVisible && !open && (
+        <button
+          type="button"
+          onClick={openSecurityPanel}
+          className={cx(
+            "fixed bottom-20 right-4 z-50 w-[min(21rem,calc(100vw-2rem))] rounded-2xl border px-4 py-3 text-left text-xs shadow-2xl backdrop-blur-2xl transition hover:-translate-y-0.5",
+            statusTheme[statusCopy.tone] || statusTheme.neutral
+          )}
+          title="Status bazy danych Kanbana"
+        >
+          <div className="flex items-start gap-3">
+            <StatusIcon size={17} className="mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <div className="truncate font-black">{statusCopy.title}</div>
+              <div className="mt-0.5 line-clamp-2 text-[11px] font-semibold opacity-80">{statusCopy.detail}</div>
+            </div>
           </div>
-        </div>
-      </button>
+        </button>
+      )}
 
       <button
         type="button"
@@ -209,7 +250,7 @@ export function SecurityDatabaseLauncher() {
           "fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-xs font-black shadow-2xl backdrop-blur-2xl transition hover:-translate-y-0.5",
           launcherButtonTheme
         )}
-        title="Baza danych i szyfrowanie"
+        title={`${statusCopy.title}. Kliknij, aby otworzyć bazę danych i szyfrowanie.`}
       >
         <ShieldCheck size={16} />
         <span>Baza</span>
