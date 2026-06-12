@@ -22,6 +22,7 @@ import {
   closeActiveFileDatabaseSession,
   getActiveFileDatabaseSummary,
 } from "../security/fileDatabaseStorage.js";
+import { getLiveBoardSnapshot } from "../security/liveBoardSnapshot.js";
 
 const STATUS_TOAST_TIMEOUT_MS = 4200;
 
@@ -44,6 +45,11 @@ function readStoredBoardState() {
 }
 
 function buildCurrentBackupText() {
+  const liveSnapshot = getLiveBoardSnapshot();
+  if (liveSnapshot) {
+    return JSON.stringify(liveSnapshot, null, 2);
+  }
+
   const boardState = readStoredBoardState();
   return JSON.stringify(buildBackupPayload(boardState), null, 2);
 }
@@ -53,6 +59,10 @@ function getCurrentThemeMode() {
     const liveTheme = document.querySelector("[data-kanban-board]")?.getAttribute("data-theme");
     if (liveTheme === "dark" || liveTheme === "light") return liveTheme;
   }
+
+  const liveSnapshot = getLiveBoardSnapshot();
+  if (liveSnapshot?.darkMode === true) return "dark";
+  if (liveSnapshot?.darkMode === false) return "light";
 
   return readStoredBoardState().darkMode ? "dark" : "light";
 }
@@ -181,15 +191,17 @@ export function SecurityDatabaseLauncher() {
 
     function refreshFromEvent(event) {
       if (event?.type === "kanban-file-database-save-error") {
+        setBackupText(buildCurrentBackupText());
         setDatabaseStatus(buildDatabaseStatus({ lastError: event.detail?.message || "Nie udało się zapisać zmian do pliku." }));
         setStatusVisible(true);
         return;
       }
 
       setThemeMode(getCurrentThemeMode());
+      setBackupText(buildCurrentBackupText());
       setDatabaseStatus(buildDatabaseStatus({ lastError: "" }));
 
-      if (event?.type !== "kanban-file-database-saved") {
+      if (event?.type !== "kanban-file-database-saved" && event?.type !== "kanban-live-board-snapshot-changed") {
         setStatusVisible(true);
       }
     }
@@ -200,6 +212,7 @@ export function SecurityDatabaseLauncher() {
       "kanban-file-database-saved",
       "kanban-file-database-save-error",
       "kanban-file-database-closed",
+      "kanban-live-board-snapshot-changed",
       "kanban-browser-persistence-changed",
       "kanban-imported",
     ];
