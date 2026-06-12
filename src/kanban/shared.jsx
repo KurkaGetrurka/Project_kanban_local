@@ -372,8 +372,13 @@ export function formatDate(dateString, options = { day: "2-digit", month: "short
   return date ? date.toLocaleDateString("pl-PL", options) : "";
 }
 export function progressOf(task) {
-  if (!task.subtasks?.length) return 0;
+  if (!task?.subtasks?.length) return 0;
   return Math.round((task.subtasks.filter((item) => item.done).length / task.subtasks.length) * 100);
+}
+export function getTaskImages(task) {
+  if (Array.isArray(task?.images)) return task.images.filter(Boolean);
+  if (task?.image) return [task.image].filter(Boolean);
+  return [];
 }
 export function stageMetaForTask(task, columns = defaultColumns) {
   return columns.find((column) => column.id === task?.columnId) || columns[0] || defaultColumns[0];
