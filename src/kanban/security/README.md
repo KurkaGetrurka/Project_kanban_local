@@ -34,7 +34,8 @@ Używany schemat:
 - startowa instalacja blokady zapisu do `localStorage` dla znanych kluczy Kanbana,
 - moduł `fileDatabaseStorage.js` z pomocnikami File System Access API,
 - jawna akcja `Zaszyfruj i zapisz do wybranego pliku`, która tworzy zaszyfrowany plik roboczy w miejscu wskazanym przez użytkownika,
-- sesja plikowa: `Otwórz zaszyfrowaną bazę`, odblokowanie hasłem i zapis późniejszych zmian do tego samego zaszyfrowanego pliku.
+- sesja plikowa: `Otwórz zaszyfrowaną bazę`, odblokowanie hasłem i zapis późniejszych zmian do tego samego zaszyfrowanego pliku,
+- pływający status bazy pokazujący tryb przeglądarkowy, aktywną sesję plikową, ostatni zapis albo błąd zapisu.
 
 ## Ważna uwaga o czyszczeniu localStorage
 
@@ -56,10 +57,20 @@ Przepływ docelowy w tym etapie:
 6. Kolejne zmiany są debounced i zapisywane do tego samego pliku jako nowa zaszyfrowana koperta.
 7. Po odświeżeniu strony sesja znika i plik trzeba ponownie otworzyć hasłem.
 
+## Status bazy
+
+`SecurityDatabaseLauncher` pokazuje pływający pasek statusu nad przyciskiem `Baza`:
+
+- `Tryb przeglądarkowy` — aplikacja nie ma aktywnej sesji plikowej i dane mogą nadal trafiać do lokalnej pamięci przeglądarki,
+- `Zapis do przeglądarki zatrzymany` — stara kopia została usunięta albo zapis do `localStorage` zatrzymano w tej sesji,
+- `Plik aktywny` — aplikacja pracuje na odblokowanym zaszyfrowanym pliku,
+- `Błąd zapisu bazy` — ostatnia próba zapisu do pliku się nie udała.
+
+Status reaguje na zdarzenia `kanban-file-database-opened`, `kanban-file-database-applied`, `kanban-file-database-saved`, `kanban-file-database-save-error`, `kanban-browser-persistence-changed` i `kanban-imported`.
+
 ## Do zrobienia w kolejnych etapach
 
-1. Dodać wyraźny pasek statusu w głównej aplikacji: `pracujesz na pliku`, `zapisano`, `błąd zapisu`, `brak aktywnej bazy`.
-2. Dodać przycisk `Zablokuj bazę`, który czyści odszyfrowane dane z pamięci aplikacji i zamyka sesję plikową.
-3. Dodać ekran startowy: `Otwórz bazę`, `Utwórz bazę`, `Zaszyfruj istniejącą bazę`.
-4. Rozważyć trzymanie wyprowadzonego klucza w pamięci sesji zamiast wykonywania PBKDF2 przy każdym autosave, jeżeli zapis będzie odczuwalnie wolny.
-5. Dodać bardziej widoczny proces zmiany hasła bazy.
+1. Dodać przycisk `Zablokuj bazę`, który czyści odszyfrowane dane z pamięci aplikacji i zamyka sesję plikową.
+2. Dodać ekran startowy: `Otwórz bazę`, `Utwórz bazę`, `Zaszyfruj istniejącą bazę`.
+3. Rozważyć trzymanie wyprowadzonego klucza w pamięci sesji zamiast wykonywania PBKDF2 przy każdym autosave, jeżeli zapis będzie odczuwalnie wolny.
+4. Dodać bardziej widoczny proces zmiany hasła bazy.
