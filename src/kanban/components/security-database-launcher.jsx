@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { ShieldCheck } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, CheckCircle2, HardDrive, ShieldCheck } from "lucide-react";
 
 import { SecurityDatabaseModal } from "./security-database.jsx";
 import {
@@ -13,7 +13,11 @@ import {
   safeStorageGetItem,
   theme,
 } from "../shared.jsx";
-import { installBrowserPersistenceGuard } from "../security/browserStoragePolicy.js";
+import {
+  installBrowserPersistenceGuard,
+  isBrowserPersistenceDisabled,
+} from "../security/browserStoragePolicy.js";
+import { getActiveFileDatabaseSummary } from "../security/fileDatabaseStorage.js";
 
 function readStoredBoardState() {
   const keys = [STORAGE_KEY, ...LEGACY_KEYS];
@@ -52,27 +56,152 @@ function buildPanelTheme(mode) {
   };
 }
 
+function formatStatusTime(value) {
+  if (!value) return "czeka na zapis";
+
+  try {
+    return new Date(value).toLocaleString("pl-PL", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return value;
+  }
+}
+
+function buildDatabaseStatus(extra = {}) {
+  return {
+    session: getActiveFileDatabaseSummary(),
+    browserPersistenceDisabled: isBrowserPersistenceDisabled(),
+    lastError: extra.lastError || "",
+  };
+}
+
+function getStatusCopy(status) {
+  if (status.lastError) {
+    return {
+      tone: "error",
+      icon: AlertTriangle,
+      title: "Błąd zapisu bazy",
+      detail: status.lastError,
+    };
+  }
+
+  if (status.session?.active) {
+    return {
+      tone: "success",
+      icon: CheckCircle2,
+      title: `Plik aktywny: ${status.session.fileName || "baza Kanbana"}`,
+      detail: status.session.lastSavedAt
+        ? `Ostatni zapis: ${formatStatusTime(status.session.lastSavedAt)}`
+        : "Sesja odblokowana, pierwszy zapis nastąpi po zmianie danych.",
+    };
+  }
+
+  if (status.browserPersistenceDisabled) {
+    return {
+      tone: "warning",
+      icon: ShieldCheck,
+      title: "Zapis do przeglądarki zatrzymany",
+      detail: "Otwórz zaszyfrowany plik bazy, żeby zapisywać dalsze zmiany.",
+    };
+  }
+
+  return {
+    tone: "neutral",
+    icon: HardDrive,
+    title: "Tryb przeglądarkowy",
+    detail: "Dane mogą nadal zapisywać się lokalnie w przeglądarce.",
+  };
+}
+
 export function SecurityDatabaseLauncher() {
   const [open, setOpen] = useState(false);
   const [backupText, setBackupText] = useState(() => buildCurrentBackupText());
   const [fileName, setFileName] = useState(() => backupFileName());
   const [themeMode, setThemeMode] = useState(() => getCurrentThemeMode());
+  const [databaseStatus, setDatabaseStatus] = useState(() => buildDatabaseStatus());
 
   const t = useMemo(() => buildPanelTheme(themeMode), [themeMode]);
   const launcherButtonTheme = themeMode === "dark"
     ? "border-violet-300/40 bg-slate-950/85 text-white hover:bg-slate-900"
     : "border-violet-200 bg-white/90 text-slate-800 shadow-violet-200/40 hover:bg-violet-50";
+  const statusCopy = getStatusCopy(databaseStatus);
+  const StatusIcon = statusCopy.icon;
+  const statusTheme = themeMode === "dark"
+    ? {
+        neutral: "border-slate-700/80 bg-slate-950/90 text-slate-100",
+        success: "border-emerald-400/40 bg-emerald-950/90 text-emerald-50",
+        warning: "border-amber-300/40 bg-amber-950/90 text-amber-50",
+        error: "border-rose-300/40 bg-rose-950/90 text-rose-50",
+      }
+    : {
+        neutral: "border-slate-200 bg-white/95 text-slate-800",
+        success: "border-emerald-200 bg-emerald-50/95 text-emerald-900",
+        warning: "border-amber-200 bg-amber-50/95 text-amber-950",
+        error: "border-rose-200 bg-rose-50/95 text-rose-950",
+      };
 
-  function openSecurityPanel() {
-    installBrowserPersistenceGuard(STORAGE_KEY, LEGACY_KEYS);
+  function refreshLauncherState(extra = {}) {
     setThemeMode(getCurrentThemeMode());
     setBackupText(buildCurrentBackupText());
     setFileName(backupFileName());
+    setDatabaseStatus(buildDatabaseStatus(extra));
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    function refreshFromEvent(event) {
+      if (event?.type === "kanban-file-database-save-error") {
+        setDatabaseStatus(buildDatabaseStatus({ lastError: event.detail?.message || "Nie udało się zapisać zmian do pliku." }));
+        return;
+      }
+
+      setDatabaseStatus(buildDatabaseStatus({ lastError: "" }));
+    }
+
+    const events = [
+      "kanban-file-database-opened",
+      "kanban-file-database-applied",
+      "kanban-file-database-saved",
+      "kanban-file-database-save-error",
+      "kanban-browser-persistence-changed",
+      "kanban-imported",
+    ];
+
+    events.forEach((eventName) => window.addEventListener(eventName, refreshFromEvent));
+    return () => events.forEach((eventName) => window.removeEventListener(eventName, refreshFromEvent));
+  }, []);
+
+  function openSecurityPanel() {
+    installBrowserPersistenceGuard(STORAGE_KEY, LEGACY_KEYS);
+    refreshLauncherState({ lastError: databaseStatus.lastError });
     setOpen(true);
   }
 
   return (
     <>
+      <button
+        type="button"
+        onClick={openSecurityPanel}
+        className={cx(
+          "fixed bottom-20 right-4 z-50 w-[min(21rem,calc(100vw-2rem))] rounded-2xl border px-4 py-3 text-left text-xs shadow-2xl backdrop-blur-2xl transition hover:-translate-y-0.5",
+          statusTheme[statusCopy.tone] || statusTheme.neutral
+        )}
+        title="Status bazy danych Kanbana"
+      >
+        <div className="flex items-start gap-3">
+          <StatusIcon size={17} className="mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <div className="truncate font-black">{statusCopy.title}</div>
+            <div className="mt-0.5 line-clamp-2 text-[11px] font-semibold opacity-80">{statusCopy.detail}</div>
+          </div>
+        </div>
+      </button>
+
       <button
         type="button"
         onClick={openSecurityPanel}
@@ -93,8 +222,7 @@ export function SecurityDatabaseLauncher() {
         fileName={fileName}
         onClose={() => {
           setOpen(false);
-          setThemeMode(getCurrentThemeMode());
-          setBackupText(buildCurrentBackupText());
+          refreshLauncherState({ lastError: databaseStatus.lastError });
         }}
       />
     </>
