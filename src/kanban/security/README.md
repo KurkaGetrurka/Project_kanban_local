@@ -30,13 +30,16 @@ Używany schemat:
 - obsługa błędnego hasła bez ujawniania danych,
 - moduł `browserStoragePolicy.js` do wykrywania i czyszczenia starej kopii z `localStorage`,
 - komponent `SecurityDatabaseModal` z procesem migracji: zaszyfruj aktualny stan, przetestuj import, usuń starą kopię z przeglądarki,
-- eksport komponentu migracji z `src/kanban/components.jsx`.
+- pływający przycisk `Baza`, który otwiera panel migracji bez ingerowania w główny układ aplikacji,
+- startowa instalacja blokady zapisu do `localStorage` dla znanych kluczy Kanbana.
 
 ## Ważna uwaga o czyszczeniu localStorage
 
-Samo usunięcie kluczy z `localStorage` nie wystarczy, jeśli główny hook aplikacji nadal automatycznie zapisuje stan przy każdej zmianie. Dlatego `browserStoragePolicy.js` ma flagę sesyjną `kanban-browser-persistence-disabled-session` oraz funkcję `shouldPersistToBrowserStorage()`.
+Samo usunięcie kluczy z `localStorage` nie wystarczy, jeśli główny hook aplikacji nadal automatycznie zapisuje stan przy każdej zmianie. Dlatego `browserStoragePolicy.js` ma flagę sesyjną `kanban-browser-persistence-disabled-session` oraz strażnika `installBrowserPersistenceGuard()`.
 
-Następny krok techniczny to podpięcie tej funkcji w `useKanbanBoard.jsx`, w miejscu gdzie obecnie wykonywane jest:
+Strażnik jest instalowany już w `src/main.jsx`, zanim aplikacja zostanie wyrenderowana. Dzięki temu, jeśli po migracji ustawiona jest flaga blokady zapisu w sesji, próby ponownego zapisania starych kluczy Kanbana do `localStorage` są zatrzymywane.
+
+Dalsze docelowe uproszczenie to podpięcie `shouldPersistToBrowserStorage()` bezpośrednio w `useKanbanBoard.jsx`, w miejscu gdzie obecnie wykonywane jest:
 
 ```js
 safeStorageSetItem(STORAGE_KEY, JSON.stringify(persistedBoardState));
@@ -52,9 +55,8 @@ if (shouldPersistToBrowserStorage()) {
 
 ## Do zrobienia w kolejnych etapach
 
-1. Podpiąć `SecurityDatabaseModal` do górnego paska aplikacji jako przycisk `Baza` / `Bezpieczeństwo`.
-2. Podpiąć `shouldPersistToBrowserStorage()` w `useKanbanBoard.jsx`, aby po czyszczeniu stara baza nie wracała do `localStorage` przy kolejnej zmianie.
-3. Przenieść główny zapis z `localStorage` do wybranego pliku bazy przez File System Access API.
-4. Dodać ekran startowy: `Otwórz bazę`, `Utwórz bazę`, `Zaszyfruj istniejącą bazę`.
-5. Dodać status bazy: `zaszyfrowana`, `niezapisane zmiany`, `zapisano`, `stare dane w przeglądarce`.
-6. Dodać blokadę bazy, która czyści odszyfrowane dane z pamięci aplikacji.
+1. Podpiąć `shouldPersistToBrowserStorage()` w `useKanbanBoard.jsx`, aby logika zapisu była jawna także w hooku aplikacji.
+2. Przenieść główny zapis z `localStorage` do wybranego pliku bazy przez File System Access API.
+3. Dodać ekran startowy: `Otwórz bazę`, `Utwórz bazę`, `Zaszyfruj istniejącą bazę`.
+4. Dodać status bazy: `zaszyfrowana`, `niezapisane zmiany`, `zapisano`, `stare dane w przeglądarce`.
+5. Dodać blokadę bazy, która czyści odszyfrowane dane z pamięci aplikacji.
