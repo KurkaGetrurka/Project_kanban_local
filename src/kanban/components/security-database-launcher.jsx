@@ -181,7 +181,10 @@ export function SecurityDatabaseLauncher() {
 
       setThemeMode(getCurrentThemeMode());
       setDatabaseStatus(buildDatabaseStatus({ lastError: "" }));
-      setStatusVisible(true);
+
+      if (event?.type !== "kanban-file-database-saved") {
+        setStatusVisible(true);
+      }
     }
 
     const events = [
